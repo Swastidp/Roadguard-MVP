@@ -1,0 +1,392 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+# Cancel in-progress runs for the same workflow
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================================
+  # Linting Job
+  # ============================================================================
+  lint:
+    name: Code Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      
+      - name: 📦 Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: 🔍 Verify UV installation
+        run: uv --version
+      
+      - name: 📚 Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+      
+      - name: 📦 Install dependencies
+        run: |
+          uv sync --all-extras --dev
+      
+      - name: 🔍 Run Ruff linter
+        run: |
+          uv run ruff check . --output-format=github
+        continue-on-error: true
+      
+      - name: 🎨 Check code formatting with Black
+        run: |
+          uv run black --check --diff .
+        continue-on-error: true
+      
+      - name: 📝 Check import sorting with isort
+        run: |
+          uv run isort --check-only --diff .
+        continue-on-error: true
+      
+      - name: 🔒 Check for security issues
+        run: |
+          uv run bandit -r app/ src/ -f json -o bandit-report.json || true
+          uv run bandit -r app/ src/ -f screen
+        continue-on-error: true
+      
+      - name: 📊 Upload linting reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linting-reports
+          path: |
+            bandit-report.json
+          retention-days: 7
+
+  # ============================================================================
+  # Testing Job
+  # ============================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: 📦 Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: 📚 Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-py${{ matrix.python-version }}-uv-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-py${{ matrix.python-version }}-uv-
+      
+      - name: 📦 Install dependencies
+        run: |
+          uv sync --all-extras --dev
+      
+      - name: 🧪 Run pytest with coverage
+        run: |
+          uv run pytest tests/ \
+            --verbose \
+            --cov=app \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --junitxml=pytest-report.xml
+      
+      - name: 📊 Generate coverage badge
+        if: matrix.python-version == '3.10'
+        run: |
+          uv run coverage-badge -o coverage.svg -f
+        continue-on-error: true
+      
+      - name: 📤 Upload coverage to Codecov
+        if: matrix.python-version == '3.10'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+      
+      - name: 📊 Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-py${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            htmlcov/
+            pytest-report.xml
+            coverage.svg
+          retention-days: 7
+      
+      - name: 📝 Comment coverage on PR
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.10'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 60
+        continue-on-error: true
+
+  # ============================================================================
+  # Type Checking Job
+  # ============================================================================
+  typecheck:
+    name: Type Checking
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      
+      - name: 📦 Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: 📚 Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-typecheck-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-typecheck-
+      
+      - name: 📦 Install dependencies
+        run: |
+          uv sync --all-extras --dev
+      
+      - name: 🔍 Run mypy type checker
+        run: |
+          uv run mypy app/ src/ --ignore-missing-imports --no-error-summary
+        continue-on-error: true
+
+  # ============================================================================
+  # Build and Import Test Job
+  # ============================================================================
+  build:
+    name: Build & Import Test
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      
+      - name: 📦 Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: 📚 Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-build-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-build-
+      
+      - name: 📦 Install dependencies
+        run: |
+          uv sync --all-extras
+      
+      - name: 🔍 Test app imports
+        run: |
+          uv run python -c "import sys; print('Python version:', sys.version)"
+          uv run python -c "from app import main; print('✅ Main module imported successfully')"
+          uv run python -c "from app.components import detection, privacy, alerts, mapping; print('✅ All components imported successfully')"
+          uv run python -c "from app.config import *; print('✅ Config imported successfully')"
+      
+      - name: 🔍 Verify critical dependencies
+        run: |
+          uv run python -c "import streamlit; print('Streamlit version:', streamlit.__version__)"
+          uv run python -c "import cv2; print('OpenCV version:', cv2.__version__)"
+          uv run python -c "import numpy; print('NumPy version:', numpy.__version__)"
+          uv run python -c "import pandas; print('Pandas version:', pandas.__version__)"
+      
+      - name: 🏗️ Build package
+        run: |
+          uv build
+      
+      - name: 📦 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7
+      
+      - name: ✅ Build success
+        run: |
+          echo "::notice::🎉 Build completed successfully!"
+          echo "::notice::✅ All imports validated"
+          echo "::notice::📦 Package built successfully"
+
+  # ============================================================================
+  # Database Initialization Test
+  # ============================================================================
+  database-test:
+    name: Database Test
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      
+      - name: 📦 Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: 📚 Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-db-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-db-
+      
+      - name: 📦 Install dependencies
+        run: |
+          uv sync --all-extras
+      
+      - name: 🗄️ Test database initialization
+        run: |
+          uv run python scripts/init_database.py --force --with-samples
+      
+      - name: ✅ Verify database created
+        run: |
+          ls -lh data/hazards.db
+          uv run python -c "import sqlite3; conn = sqlite3.connect('data/hazards.db'); cursor = conn.cursor(); cursor.execute('SELECT COUNT(*) FROM hazards'); print(f'✅ Database contains {cursor.fetchone()[0]} hazards'); conn.close()"
+
+  # ============================================================================
+  # Security Scan Job
+  # ============================================================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      
+      - name: 📦 Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: 📦 Install dependencies
+        run: |
+          uv sync --all-extras --dev
+      
+      - name: 🔒 Run safety check
+        run: |
+          uv run safety check --json || true
+        continue-on-error: true
+      
+      - name: 🔍 Run pip-audit
+        run: |
+          uv run pip-audit || true
+        continue-on-error: true
+
+  # ============================================================================
+  # Final Status Job
+  # ============================================================================
+  ci-success:
+    name: CI Pipeline Success
+    runs-on: ubuntu-latest
+    needs: [lint, test, typecheck, build, database-test]
+    if: always()
+    
+    steps:
+      - name: ✅ Check all jobs status
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ]; then
+            echo "::error::One or more CI jobs failed"
+            exit 1
+          fi
+          echo "::notice::🎉 All CI checks passed successfully!"
+      
+      - name: 📊 CI Summary
+        run: |
+          echo "### ✅ CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Linting | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Testing | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Checking | ${{ needs.typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Database | ${{ needs.database-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 Build: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "🌿 Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

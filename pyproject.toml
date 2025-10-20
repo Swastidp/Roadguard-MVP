@@ -1,0 +1,19 @@
+[project]
+name = "roadguard-hackathon"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "folium>=0.20.0",
+    "numpy>=2.3.4",
+    "opencv-python>=4.11.0.86",
+    "pandas>=2.3.3",
+    "pillow>=11.3.0",
+    "plotly>=6.3.1",
+    "pydeck>=0.9.1",
+    "scikit-learn>=1.7.2",
+    "streamlit>=1.50.0",
+    "streamlit-folium>=0.25.3",
+    "ultralytics>=8.3.217",
+]
