@@ -5,7 +5,40 @@ Uses the custom trained best.pt model for road hazard detection.
 Team: Autono Minds | VW Hackathon 2025
 """
 
-import cv2
+"""
+Detection module using YOLOv11 + SE Attention trained by Team Autono Minds.
+Uses the custom trained best.pt model for road hazard detection.
+
+Team: Autono Minds | VW Hackathon 2025
+"""
+
+import os
+import sys
+
+# Handle OpenCV import for cloud deployment
+try:
+    import cv2
+    print("✅ OpenCV imported successfully")
+except ImportError as e:
+    print(f"⚠️ OpenCV import issue: {e}")
+    # Try alternative import
+    try:
+        import cv2
+        print("✅ OpenCV imported on retry")
+    except Exception as e2:
+        print(f"❌ OpenCV failed completely: {e2}")
+        raise ImportError(f"OpenCV not available: {e2}")
+
+# Set OpenCV to headless mode for cloud deployment
+if 'STREAMLIT_SERVER_PORT' in os.environ or 'STREAMLIT_CLOUD' in os.environ:
+    # Running on Streamlit Cloud
+    os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '0'
+    print("🌐 OpenCV configured for Streamlit Cloud deployment")
+
+
+# Rest of your imports...
+
+
 import numpy as np
 from pathlib import Path
 from typing import Optional, List, Tuple, Dict, Union
