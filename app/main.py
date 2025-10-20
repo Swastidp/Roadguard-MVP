@@ -1,8 +1,8 @@
 """
-RoadGuard: Road Hazard Detection System
+RoadGuard: Road Hazard Detection System by Team Autono Minds
 Main entry point for the Streamlit application.
 
-Author: Team VW Hackathon 2025
+Team: Autono Minds | VW Hackathon 2025
 """
 
 import streamlit as st
@@ -30,343 +30,248 @@ except ImportError as e:
 def configure_page():
     """Configure Streamlit page settings."""
     st.set_page_config(
-        page_title="RoadGuard: Hazard Detection",
+        page_title="RoadGuard - Team Autono Minds",
         page_icon="🚗",
         layout="wide",
         initial_sidebar_state="expanded",
         menu_items={
-            'Get Help': 'https://github.com/yourusername/roadguard',
-            'Report a bug': 'https://github.com/yourusername/roadguard/issues',
+            'Get Help': 'https://github.com/Swastidp/Roadguard-MVP',
+            'Report a bug': 'https://github.com/Swastidp/Roadguard-MVP/issues',
             'About': """
             # RoadGuard 🚗
             
-            Advanced AI-powered road hazard detection system for safer driving.
+            Team Autono Minds - VW Hackathon 2025
+            YOLOv11 + SE Attention for Road Hazard Detection
             
-            **VW Hackathon 2025**
-            
-            Built with ❤️ using YOLOv8 and Streamlit
+            **Performance**: 50.56% mAP@0.5
             """
         }
     )
 
 
 # ============================================================================
-# Custom CSS Styling
+# Minimal CSS - ONLY HIDE STREAMLIT BRANDING
 # ============================================================================
 
 def apply_custom_css():
-    """Apply custom CSS styling to the application."""
+    """Apply minimal CSS - only hide Streamlit branding, keep all default styling."""
     st.markdown("""
         <style>
-        /* Main header styling */
-        .main-header {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #1E40AF;
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1rem;
-            background: linear-gradient(90deg, #3B82F6 0%, #1E40AF 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        /* Custom button styling */
-        .stButton>button {
-            background-color: #3B82F6;
-            color: white;
-            border-radius: 8px;
-            padding: 0.5rem 2rem;
-            font-weight: 600;
-            border: none;
-            transition: all 0.3s ease;
-        }
-        
-        .stButton>button:hover {
-            background-color: #2563EB;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-        
-        /* Sidebar styling */
-        [data-testid="stSidebar"] {
-            background-color: #F8FAFC;
-            border-right: 2px solid #E2E8F0;
-        }
-        
-        [data-testid="stSidebar"] .element-container {
-            padding: 0.5rem 1rem;
-        }
-        
-        /* Radio button styling */
-        .stRadio > label {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1E293B;
-        }
-        
-        .stRadio > div {
-            gap: 0.5rem;
-        }
-        
-        .stRadio > div > label {
-            background-color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            border: 2px solid #E2E8F0;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .stRadio > div > label:hover {
-            border-color: #3B82F6;
-            background-color: #EFF6FF;
-        }
-        
-        /* Alert boxes */
-        .stAlert {
-            border-radius: 8px;
-            border-left: 4px solid;
-        }
-        
-        /* Metric cards */
-        [data-testid="stMetric"] {
-            background-color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Footer styling */
-        .footer {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: #64748B;
-            font-size: 0.9rem;
-            border-top: 1px solid #E2E8F0;
-            margin-top: 2rem;
-        }
-        
-        /* Loading animation */
-        .stSpinner > div {
-            border-color: #3B82F6 transparent transparent transparent;
-        }
-        
-        /* Success/Error message styling */
-        .success-box {
-            background-color: #ECFDF5;
-            color: #065F46;
-            padding: 1rem;
-            border-radius: 8px;
-            border-left: 4px solid #10B981;
-            margin: 1rem 0;
-        }
-        
-        .error-box {
-            background-color: #FEF2F2;
-            color: #991B1B;
-            padding: 1rem;
-            border-radius: 8px;
-            border-left: 4px solid #EF4444;
-            margin: 1rem 0;
-        }
-        
-        /* Hide Streamlit branding */
+        /* Hide Streamlit branding only */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
+        header {visibility: hidden;}
+        
+        /* Let everything else use Streamlit defaults */
         </style>
     """, unsafe_allow_html=True)
 
 
 # ============================================================================
-# Sidebar Navigation
+# Simple Sidebar - Streamlit Default Styling
 # ============================================================================
 
 def create_sidebar():
-    """Create and configure the sidebar navigation."""
+    """Create sidebar using pure Streamlit components with default styling."""
     with st.sidebar:
-        # App logo/title
-        st.markdown("""
-            <div style='text-align: center; padding: 1rem 0 2rem 0;'>
-                <h1 style='color: #1E40AF; font-size: 2rem; margin: 0;'>
-                    🚗 RoadGuard
-                </h1>
-                <p style='color: #64748B; font-size: 0.9rem; margin: 0.5rem 0 0 0;'>
-                    AI-Powered Hazard Detection
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+        # Simple team branding with Streamlit defaults
+        st.title("🚗 RoadGuard")
+        st.subheader("AI-Powered Hazard Detection")
+        
+        # Team info using Streamlit default styling
+        st.info("**Team Autono Minds**")
+        st.caption("VW Hackathon 2025 | YOLOv11 + SE Attention")
         
         st.markdown("---")
         
-        # Navigation menu
+        # Navigation with default radio buttons
+        st.markdown("### 🧭 Navigation")
         page = st.radio(
-            "Navigate",
+            "Select a page:",
             options=[
                 "🏠 Home",
-                "🎥 Live Demo",
+                "🎥 Live Demo", 
                 "🗺️ Hazard Map",
                 "⚠️ Alert Simulator",
                 "🔒 Privacy Test",
                 "📊 Metrics Dashboard"
             ],
-            key="navigation",
-            label_visibility="collapsed"
+            key="navigation"
         )
         
         st.markdown("---")
         
-        # Footer information
-        st.markdown("""
-            <div class='footer'>
-                <p style='margin: 0.5rem 0;'>
-                    <strong>VW Hackathon 2025</strong>
-                </p>
-                <p style='margin: 0.5rem 0; font-size: 0.85rem;'>
-                    Team CloudNatics
-                </p>
-                <p style='margin: 1rem 0 0.5rem 0;'>
-                    <a href='https://github.com/yourusername/roadguard' 
-                       target='_blank' 
-                       style='color: #3B82F6; text-decoration: none;'>
-                        ⭐ Star us on GitHub
-                    </a>
-                </p>
-                <p style='margin: 0; font-size: 0.8rem; color: #94A3B8;'>
-                    Built with Streamlit & YOLOv8
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+        # Model performance with default metrics
+        st.markdown("### 🏆 Model Performance")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("mAP@0.5", "50.56%")
+        with col2:
+            st.metric("Epochs", "65")
+        
+        st.markdown("---")
+        
+        # Simple footer with default styling
+        st.markdown("### 📍 Info")
+        st.success("**VW Hackathon 2025**")
+        st.info("**Team Autono Minds**")
+        st.caption("YOLOv11n + SE Attention  \nCustom Trained Model")
+        
+        # GitHub link
+        st.markdown("---")
+        st.markdown("⭐ [Star us on GitHub](https://github.com/Swastidp/Roadguard-MVP)")
+        st.caption("Built with ❤️ using Streamlit")
         
         return page
 
 
 # ============================================================================
-# Page Routing
+# Simple Home Page - Pure Streamlit Components
 # ============================================================================
 
-def route_page(page_selection: str):
-    """
-    Route to the appropriate page based on user selection.
-    
-    Args:
-        page_selection: Selected page from sidebar navigation
-    """
-    try:
-        if page_selection == "🏠 Home":
-            display_home()
-        elif page_selection == "🎥 Live Demo":
-            with st.spinner("Loading demo interface..."):
-                demo.show()
-        elif page_selection == "🗺️ Hazard Map":
-            with st.spinner("Loading hazard map..."):
-                map_view.show()
-        elif page_selection == "⚠️ Alert Simulator":
-            with st.spinner("Loading alert simulator..."):
-                alert_sim.show()
-        elif page_selection == "🔒 Privacy Test":
-            with st.spinner("Loading privacy test..."):
-                privacy_test.show()
-        elif page_selection == "📊 Metrics Dashboard":
-            with st.spinner("Loading metrics dashboard..."):
-                metrics.show()
-    except Exception as e:
-        st.error(f"⚠️ Error loading page: {str(e)}")
-        st.exception(e)
-
-
 def display_home():
-    """Display the home page."""
-    st.markdown("<h1 class='main-header'>Welcome to RoadGuard</h1>", 
-                unsafe_allow_html=True)
+    """Display home page using only Streamlit default components."""
     
-    # Hero section
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("""
-            <div style='text-align: center; padding: 2rem;'>
-                <h2 style='color: #1E293B; margin-bottom: 1rem;'>
-                    AI-Powered Road Hazard Detection
-                </h2>
-                <p style='color: #64748B; font-size: 1.1rem; line-height: 1.6;'>
-                    Detect and alert drivers about road hazards in real-time using 
-                    advanced computer vision and deep learning technologies.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+    # Simple headers
+    st.title("🏆 Team Autono Minds - RoadGuard")
+    st.subheader("AI-Powered Road Hazard Detection")
+    
+    # Team info
+    st.info("**Team Autono Minds** | VW Hackathon 2025 | YOLOv11 + SE Attention")
+    
+    # Project overview
+    st.markdown("### 🎯 Project Overview")
+    
+    st.markdown("""
+    Custom **YOLOv11 + SE Attention** architecture achieving **50.56% mAP@0.5** on road hazard detection 
+    with **65 epochs** of dedicated training on 6,439 images.
+    """)
+    
+    st.success("🔍 Real-time detection • 🔒 Privacy-compliant • 🗺️ Spatial intelligence")
     
     # Features
-    st.markdown("### 🎯 Key Features")
+    st.markdown("## 🎯 Key Features")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
+        st.markdown("### 🔍 Real-time Detection")
         st.markdown("""
-            <div style='background-color: white; padding: 1.5rem; 
-                        border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);'>
-                <h3 style='color: #3B82F6; margin-top: 0;'>🔍 Real-time Detection</h3>
-                <p style='color: #64748B;'>
-                    Detect potholes, cracks, and road damage instantly using YOLOv8
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+        Custom YOLOv11 + SE Attention model detects potholes, cracks, 
+        and road damage instantly with **50.56% mAP@0.5** accuracy.
+        """)
+        st.success("⚡ <45ms inference time")
     
     with col2:
+        st.markdown("### 🗺️ Interactive Mapping")
         st.markdown("""
-            <div style='background-color: white; padding: 1.5rem; 
-                        border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);'>
-                <h3 style='color: #10B981; margin-top: 0;'>🗺️ Interactive Map</h3>
-                <p style='color: #64748B;'>
-                    Visualize detected hazards on an interactive map interface
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+        Visualize detected hazards on interactive maps with DBSCAN clustering 
+        and spatial deduplication for comprehensive road monitoring.
+        """)
+        st.info("📍 GPS-based alert zones")
     
     with col3:
+        st.markdown("### 🔒 Privacy Protected")
         st.markdown("""
-            <div style='background-color: white; padding: 1.5rem; 
-                        border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);'>
-                <h3 style='color: #F59E0B; margin-top: 0;'>🔒 Privacy Protected</h3>
-                <p style='color: #64748B;'>
-                    Automatic face and license plate blurring for privacy compliance
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+        Automatic face and license plate detection with real-time blurring 
+        ensures GDPR compliance and user privacy protection.
+        """)
+        st.warning("🛡️ 100% GDPR compliant")
     
     st.markdown("---")
     
-    # Statistics
-    st.markdown("### 📈 Detection Capabilities")
+    # Training results
+    st.markdown("## 📊 Team Autono Minds - Training Results")
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric(label="Hazard Types", value="4", delta="Categories")
+        st.metric("Overall mAP@0.5", "50.56%", "YOLOv11 + SE Attention")
+    
     with col2:
-        st.metric(label="Avg Confidence", value="92%", delta="3% ↑")
+        st.metric("Best Class", "69.97%", "Transverse Crack")
+    
     with col3:
-        st.metric(label="Response Time", value="<50ms", delta="Real-time")
+        st.metric("Training Dataset", "6,439", "Images (65 epochs)")
+    
     with col4:
-        st.metric(label="Privacy Score", value="100%", delta="Compliant")
+        st.metric("Model Size", "2.6M", "Parameters")
     
     st.markdown("---")
     
-    # Getting Started
-    st.markdown("### 🚀 Getting Started")
+    # Performance table
+    st.markdown("## 🎯 Per-Class Performance Analysis")
+    
+    import pandas as pd
+    
+    performance_data = {
+        'Class': ['🛣️ Transverse Crack', '🕳️ Pothole', '📏 Longitudinal Crack', '🕸️ Alligator Crack'],
+        'mAP@0.5': ['69.97%', '62.34%', '59.84%', '10.10%'],
+        'Difficulty': ['✅ Easy', '🟡 Medium', '🟡 Medium', '🔴 Very Hard']
+    }
+    
+    df = pd.DataFrame(performance_data)
+    st.dataframe(df, use_container_width=True)
+    
+    # Analysis insights
+    st.markdown("### 🔍 Analysis Insights")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.success("✅ **Transverse Cracks** perform best (69.97%) - clear perpendicular patterns")
+        st.info("🎯 **Potholes** show solid detection (62.34%) - distinct circular shapes")
+        st.info("📏 **Longitudinal Cracks** achieve good accuracy (59.84%) - parallel patterns")
+        st.warning("⚠️ **Alligator Cracks** need improvement (10.10%) - complex interconnected patterns")
+    
+    with col2:
+        st.metric("Training Time", "~2 hours", "RTX 3050 GPU")
+        st.metric("Dataset Split", "80/20", "Train/Validation")
+        st.metric("Best Epoch", "65", "Final model")
+    
+    st.markdown("---")
+    
+    # Getting started
+    st.markdown("## 🚀 Getting Started")
     
     st.markdown("""
-        1. **🎥 Live Demo**: Test the detection system with your webcam or video file
-        2. **🗺️ Hazard Map**: View all detected hazards on an interactive map
-        3. **⚠️ Alert Simulator**: Simulate driver alerts based on vehicle speed
-        4. **🔒 Privacy Test**: Verify privacy protection features
-        5. **📊 Metrics Dashboard**: Analyze detection performance and statistics
+    1. **🎥 Live Demo** - Test our YOLOv11 + SE Attention model with your own images or webcam feed
+    2. **🗺️ Hazard Map** - View detected hazards on an interactive map with clustering  
+    3. **⚠️ Alert Simulator** - Simulate physics-based driver alerts based on vehicle speed
+    4. **🔒 Privacy Test** - Test GDPR compliance with face and license plate blurring
+    5. **📊 Metrics Dashboard** - View detailed performance metrics and benchmarks
     """)
     
-    st.info("👈 Use the sidebar to navigate between different features")
+    st.success("👈 **Use the sidebar navigation** to explore different features of RoadGuard!")
+
+
+# ============================================================================
+# Page Routing - UNCHANGED
+# ============================================================================
+
+def route_page(page_selection: str):
+    """Route to the appropriate page based on user selection."""
+    try:
+        if page_selection == "🏠 Home":
+            display_home()
+        elif page_selection == "🎥 Live Demo":
+            with st.spinner("Loading Team Autono Minds demo interface..."):
+                demo.show()
+        elif page_selection == "🗺️ Hazard Map":
+            with st.spinner("Loading hazard map with spatial clustering..."):
+                map_view.show()
+        elif page_selection == "⚠️ Alert Simulator":
+            with st.spinner("Loading physics-based alert simulator..."):
+                alert_sim.show()
+        elif page_selection == "🔒 Privacy Test":
+            with st.spinner("Loading GDPR compliance testing..."):
+                privacy_test.show()
+        elif page_selection == "📊 Metrics Dashboard":
+            with st.spinner("Loading YOLOv11 performance metrics..."):
+                metrics.show()
+    except Exception as e:
+        st.error(f"⚠️ Error loading page: {str(e)}")
+        st.exception(e)
 
 
 # ============================================================================
@@ -374,12 +279,12 @@ def display_home():
 # ============================================================================
 
 def main():
-    """Main application entry point."""
+    """Main application entry point with minimal styling."""
     try:
         # Configure page
         configure_page()
         
-        # Apply custom styling
+        # Apply minimal CSS (only hide Streamlit branding)
         apply_custom_css()
         
         # Create sidebar and get page selection
@@ -389,9 +294,16 @@ def main():
         route_page(page_selection)
         
     except Exception as e:
-        st.error(f"🚨 Application Error: {str(e)}")
+        st.error(f"🚨 RoadGuard Application Error: {str(e)}")
         st.exception(e)
-        st.info("Please refresh the page or contact support if the issue persists.")
+        
+        st.info("""
+            **Recovery Options:**
+            1. Refresh the page (F5)
+            2. Check if models/best.pt exists
+            3. Verify all dependencies: `uv sync`
+            4. Contact Team Autono Minds for support
+        """)
 
 
 if __name__ == "__main__":
