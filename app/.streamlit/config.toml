@@ -1,0 +1,5 @@
+[global]
+showSidebarNavigation = false
+
+[ui]
+hideTopBar = true

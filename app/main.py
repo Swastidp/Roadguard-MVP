@@ -30,11 +30,11 @@ except ImportError as e:
 
 
 # ============================================================================
-# Page Configuration
+# Page Configuration - HIDE STREAMLIT PAGES
 # ============================================================================
 
 def configure_page():
-    """Configure Streamlit page settings."""
+    """Configure Streamlit page settings and hide default pages."""
     st.set_page_config(
         page_title="RoadGuard - Team Autono Minds",
         page_icon="🚗",
@@ -56,29 +56,43 @@ def configure_page():
 
 
 # ============================================================================
-# Minimal CSS - ONLY HIDE STREAMLIT BRANDING
+# Minimal CSS - HIDE STREAMLIT BRANDING AND DEFAULT PAGES
 # ============================================================================
 
 def apply_custom_css():
-    """Apply minimal CSS - only hide Streamlit branding, keep all default styling."""
+    """Apply CSS to hide Streamlit branding and default page navigation."""
     st.markdown("""
         <style>
-        /* Hide Streamlit branding only */
+        /* Hide Streamlit branding and default navigation */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
         
-        /* Let everything else use Streamlit defaults */
+        /* Hide the default Streamlit page selector */
+        .css-1d391kg {display: none;}
+        .css-1rs6os {display: none;}
+        .css-17ziqus {display: none;}
+        .stSelectbox {display: none;}
+        
+        /* Hide any auto-generated navigation */
+        [data-testid="stSidebar"] .css-1d391kg {display: none;}
+        [data-testid="stSidebar"] .css-1rs6os {display: none;}
+        [data-testid="stSidebar"] .css-17ziqus {display: none;}
+        
+        /* Custom sidebar styling */
+        .sidebar .sidebar-content {
+            padding-top: 1rem;
+        }
         </style>
     """, unsafe_allow_html=True)
 
 
 # ============================================================================
-# Simple Sidebar - Streamlit Default Styling
+# Custom Sidebar - COMPLETE CONTROL
 # ============================================================================
 
 def create_sidebar():
-    """Create sidebar using pure Streamlit components with default styling."""
+    """Create custom sidebar with exact page order and naming."""
     with st.sidebar:
         # Simple team branding with Streamlit defaults
         st.title("RoadGuard")
@@ -90,17 +104,18 @@ def create_sidebar():
         
         st.markdown("---")
         
-        # Navigation with default radio buttons (removed Alert Simulator and Metrics)
+        # Custom navigation with exact order you want
         st.markdown("### Navigation")
         page = st.radio(
             "Select a page:",
             options=[
-                "Home",
-                "Demo", 
-                "Map View",
-                "Privacy Test"
+                "Demo",
+                "Map view", 
+                "Privacy test",
+                "Overview"
             ],
-            key="navigation"
+            format_func=lambda x: x.replace("_", " ").title(),
+            key="main_navigation"
         )
         
         st.markdown("---")
@@ -453,48 +468,52 @@ def display_home():
     1. **Demo** - Test detection with uploaded images or webcam feed
     2. **Map View** - View detected hazards on an interactive map with clustering  
     3. **Privacy Test** - Test GDPR compliance with face and license plate blurring
+    4. **Overview** - Complete project overview, metrics, and integrated demo
     """)
     
     st.success("Use the sidebar navigation to explore different features of RoadGuard!")
 
 
 # ============================================================================
-# Page Routing (removed alert_sim and metrics)
+# Page Routing - EXACT MATCHING
 # ============================================================================
 
 def route_page(page_selection: str):
     """Route to the appropriate page based on user selection."""
     try:
-        if page_selection == "Home":
-            display_home()
-        elif page_selection == "Demo":
+        if page_selection == "Demo":
             with st.spinner("Loading Team Autono Minds demo interface..."):
                 demo.show()
-        elif page_selection == "Map View":
+        elif page_selection == "Map view":
             with st.spinner("Loading hazard map with spatial clustering..."):
                 map_view.show()
-        elif page_selection == "Privacy Test":
+        elif page_selection == "Privacy test":
             with st.spinner("Loading GDPR compliance testing..."):
                 privacy_test.show()
+        elif page_selection == "Overview":
+            display_home()
+        else:
+            # Fallback to overview if unknown page
+            demo.show()
     except Exception as e:
         st.error(f"Error loading page: {str(e)}")
         st.exception(e)
 
 
 # ============================================================================
-# Main Application
+# Main Application - HIDE DEFAULT STREAMLIT NAVIGATION
 # ============================================================================
 
 def main():
-    """Main application entry point with minimal styling."""
+    """Main application entry point with custom navigation only."""
     try:
         # Configure page
         configure_page()
         
-        # Apply minimal CSS (only hide Streamlit branding)
+        # Apply CSS to hide default Streamlit navigation
         apply_custom_css()
         
-        # Create sidebar and get page selection
+        # Create custom sidebar and get page selection
         page_selection = create_sidebar()
         
         # Route to selected page
