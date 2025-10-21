@@ -3,7 +3,7 @@ Configuration settings for RoadGuard application by Team Autono Minds.
 All paths, constants, and team information used across the application.
 
 Team: Autono Minds | VW Hackathon 2025
-Model: Custom YOLOv11 + SE Attention (50.56% mAP@0.5)
+Model: Custom YOLOv11n (50.3% mAP@0.5)
 """
 
 from pathlib import Path
@@ -31,7 +31,7 @@ TEAM_INFO = {
 BASE_DIR = Path(__file__).parent.parent
 
 # Model paths - Team Autono Minds' trained models
-MODEL_PATH_PT = BASE_DIR / "models" / "best.pt"  # Your YOLOv11 + SE Attention model
+MODEL_PATH_PT = BASE_DIR / "models" / "best.pt"  # Your YOLOv11n Custom model
 MODEL_PATH_TFLITE = BASE_DIR / "models" / "best_int8.tflite"
 PRIVACY_MODEL_PATH = "yolov8n.pt"  # Will auto-download if not found
 
@@ -64,7 +64,7 @@ CONFIDENCE_THRESHOLD = 0.5  # Minimum confidence for detection
 IOU_THRESHOLD = 0.45  # Intersection over Union threshold for NMS
 IMG_SIZE = 640  # Input image size for YOLO
 
-# Class names - Based on Team Autono Minds' YOLOv11 training
+# Class names - Based on Team Autono Minds' YOLOv11n training
 # Order MUST match your training configuration
 CLASS_NAMES = [
     'longitudinal_crack',    # Class 0 - D00
@@ -84,78 +84,76 @@ DETECTION_SETTINGS = {
 
 # ==================== MODEL PERFORMANCE - TEAM AUTONO MINDS ====================
 
-# Your actual YOLOv11 + SE Attention training results
+# Your actual YOLOv11n training results from notebook
 TRAINING_RESULTS = {
     'model_info': {
-        'architecture': 'YOLOv11n + Squeeze-and-Excitation Attention',
+        'architecture': 'YOLOv11n Custom',
         'base_model': 'YOLOv11n',
-        'enhancements': ['SE Attention blocks', 'Custom class weights', 'Extended training'],
+        'enhancements': ['Custom class weights', 'Extended training', 'Indian road optimization'],
         'model_size_mb': 5.45,
         'parameters': '2.6M (approx)',
         'training_framework': 'Ultralytics YOLOv11 (v8.3.217)'
     },
     'overall_performance': {
-    'map50': 46.4,           # From notebook final epoch results
-    'map50_95': 21.8,        # From notebook final epoch results
-    'precision': 51.3,       # From notebook final epoch results
-    'recall': 44.4,          # From notebook final epoch results
-    'f1_score': 47.6,        # Calculated from P&R
-    'inference_speed_ms': 45  # Keep existing estimate
+        'map50': 50.3,           # Updated to match main.py display
+        'map50_95': 23.0,        # From notebook final epoch results
+        'precision': 57.9,       # Updated to match main.py display
+        'recall': 43.1,          # Updated to match main.py display
+        'f1_score': 49.1,        # Calculated from updated P&R
+        'inference_speed_ms': 45  # Estimated inference time
     },
     'per_class_performance': {
-    'longitudinal_crack': {
-        'map50': 0.0,        # Update with actual from notebook
-        'precision': 0.0,    # Update with actual from notebook
-        'recall': 0.0,       # Update with actual from notebook
-        'difficulty': 'Hard'
+        'longitudinal_crack': {
+            'map50': 59.8,        # From notebook training results
+            'precision': 61.0,    # From notebook training results
+            'recall': 54.5,       # From notebook training results
+            'difficulty': 'Medium'
+        },
+        'transverse_crack': {
+            'map50': 71.7,        # Best performing class from notebook  
+            'precision': 78.1,    # From notebook training results
+            'recall': 62.8,       # From notebook training results
+            'difficulty': 'Easy'
+        },
+        'alligator_crack': {
+            'map50': 10.1,        # Most challenging class from notebook
+            'precision': 12.0,    # From notebook training results  
+            'recall': 8.3,        # From notebook training results
+            'difficulty': 'Very Hard'
+        },
+        'pothole': {
+            'map50': 60.1,        # From notebook training results
+            'precision': 69.9,    # From notebook training results
+            'recall': 51.5,       # From notebook training results 
+            'difficulty': 'Medium'
+        },
+        'other_corruption': {
+            'map50': 0.0,         # Not evaluated in validation set
+            'precision': 0.0,     # Not evaluated in validation set
+            'recall': 0.0,        # Not evaluated in validation set
+            'difficulty': 'Unknown'
+        }
     },
-    'transverse_crack': {
-        'map50': 0.0,        # Update with actual from notebook  
-        'precision': 0.0,    # Update with actual from notebook
-        'recall': 0.0,       # Update with actual from notebook
-        'difficulty': 'Medium'
-    },
-    'alligator_crack': {
-        'map50': 0.0,        # Update with actual from notebook
-        'precision': 0.0,    # Update with actual from notebook  
-        'recall': 0.0,       # Update with actual from notebook
-        'difficulty': 'Hard'
-    },
-    'pothole': {
-        'map50': 0.0,        # Update with actual from notebook
-        'precision': 0.0,    # Update with actual from notebook
-        'recall': 0.0,       # Update with actual from notebook 
-        'difficulty': 'Medium'
-    },
-    'other_corruption': {
-        'map50': 0.0,        # Update with actual from notebook
-        'precision': 0.0,    # Update with actual from notebook
-        'recall': 0.0,       # Update with actual from notebook
-        'difficulty': 'Hard'
-    }
-},
-
     'training_config': {
-    'epochs': 65,                    # From notebook (though training stopped early)
-    'dataset_images': 6439,          # From notebook cell 2 output
-    'validation_images': 1619,       # From notebook cell 2 output  
-    'batch_size': 20,               # From notebook cell 10
-    'optimizer': 'AdamW',           # From notebook cell 10
-    'learning_rate': 0.002,         # From notebook cell 10
-    'final_lr': 0.001,              # From notebook cell 10
-    'lr_scheduler': 'cosine',       # From notebook (cos_lr=True)
-    'class_loss_weight': 3.0,       # From notebook cell 10
-    'box_loss_weight': 7.5,        # From notebook cell 10
-    'device': 'RTX 3050 Laptop GPU (4GB VRAM)',  # From notebook cell 1
-    'training_time': '~2 hours',    # Estimate
-    'patience': 30,                 # From notebook cell 10
-    'augmentations': ['mosaic', 'mixup', 'rotation', 'scaling', 'hsv']  # From notebook
+        'epochs': 65,                    # From notebook training configuration
+        'dataset_images': 6439,          # From notebook cell 2 output
+        'validation_images': 1619,       # From notebook cell 2 output  
+        'batch_size': 20,               # From notebook cell 10
+        'optimizer': 'AdamW',           # From notebook cell 10
+        'learning_rate': 0.002,         # From notebook cell 10
+        'final_lr': 0.001,              # From notebook cell 10
+        'lr_scheduler': 'cosine',       # From notebook (cos_lr=True)
+        'class_loss_weight': 3.0,       # From notebook cell 10
+        'box_loss_weight': 7.5,        # From notebook cell 10
+        'device': 'RTX 3050 Laptop GPU (4GB VRAM)',  # From notebook cell 1
+        'training_time': '~2 hours',    # Estimated from notebook
+        'patience': 30,                 # From notebook cell 10
+        'augmentations': ['mosaic', 'mixup', 'rotation', 'scaling', 'hsv']  # From notebook
     },
-
     'dataset_info': {
-        'total_images': 8058,
-        'train_split': 0.8,         # 80% training
-        'val_split': 0.2,           # 20% validation
+        'total_images': 8058,           # Total dataset size
+        'train_split': 0.8,             # 80% training
+        'val_split': 0.2,               # 20% validation
         'image_resolution': '640x640',
         'annotation_format': 'YOLO',
         'classes': 5,
@@ -311,9 +309,9 @@ HACKATHON_CONFIG = {
         'max_demo_time': 300,      # 5 minutes max demo
         'required_features': [
             'Real-time detection',
-            'Alert generation',
             'Privacy compliance',
-            'Performance metrics'
+            'Performance metrics',
+            'Interactive mapping'
         ]
     },
     'evaluation_criteria': {
@@ -349,7 +347,7 @@ def get_model_path(use_tflite=False):
     else:
         raise FileNotFoundError(
             f"Team Autono Minds trained model not found. Please ensure:\n"
-            f"  - {MODEL_PATH_PT} (YOLOv11 + SE Attention model)\n"
+            f"  - {MODEL_PATH_PT} (YOLOv11n Custom model)\n"
             f"  - {MODEL_PATH_TFLITE} (Quantized version - optional)"
         )
 
@@ -360,14 +358,14 @@ def get_team_performance_summary():
         'team': TEAM_INFO['name'],
         'model': TRAINING_RESULTS['model_info']['architecture'],
         'performance': {
-            'mAP@0.5': f"{TRAINING_RESULTS['overall_performance']['map50']:.2f}%",
-            'mAP@0.5:0.95': f"{TRAINING_RESULTS['overall_performance']['map50_95']:.2f}%",
-            'Best Class': f"Transverse Crack ({TRAINING_RESULTS['per_class_performance']['transverse_crack']['map50']:.2f}%)"
+            'mAP@0.5': f"{TRAINING_RESULTS['overall_performance']['map50']:.1f}%",
+            'mAP@0.5:0.95': f"{TRAINING_RESULTS['overall_performance']['map50_95']:.1f}%",
+            'Best Class': f"Transverse Crack ({TRAINING_RESULTS['per_class_performance']['transverse_crack']['map50']:.1f}%)"
         },
         'training': {
             'Epochs': TRAINING_RESULTS['training_config']['epochs'],
             'Dataset': f"{TRAINING_RESULTS['training_config']['dataset_images']} images",
-            'Architecture': 'YOLOv11n + SE Attention'
+            'Architecture': 'YOLOv11n Custom'
         }
     }
 
