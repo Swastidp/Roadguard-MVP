@@ -68,7 +68,7 @@ def show():
     
     st.markdown("""
         Explore detected road hazards on an interactive map. The map centers on your current location 
-        and shows nearby hazards with severity indicators.
+        and shows nearby hazards with severity indicators. Use the location button to center on your position.
     """)
     
     # Request browser geolocation
@@ -86,12 +86,12 @@ def show():
         lon = st.session_state._component_value.get('lon')
         if lat is not None and lon is not None:
             st.session_state.user_location = (float(lat), float(lon))
-            st.success(f"📍 Location detected: {lat:.4f}, {lon:.4f}")
+            st.success(f"Location detected: {lat:.4f}, {lon:.4f}")
     
     if st.session_state.user_location:
         center_latlon = st.session_state.user_location
     else:
-        st.info("📍 Using default location. Allow location access for better experience.")
+        st.info("Using default location. Allow location access for better experience.")
     
     st.markdown("---")
     
@@ -320,25 +320,31 @@ def display_summary_metrics(df: pd.DataFrame):
 
 
 # ============================================================================
-# Simple Map (Replaces Cluster Map)
+# Simple Map with Location Button
 # ============================================================================
 
 def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
-    """Display a simple hazard map centered at user's location without clustering options."""
+    """Display a simple hazard map centered at user's location with Google Maps style location button."""
     
     st.subheader("Hazard Map")
     
     if df.empty:
         st.warning("No hazards to display with current filters")
-        # Still show map with user location
+        # Still show map with user location and location button
         if center_latlon:
             with st.spinner("Generating map..."):
                 center_lat, center_lon = center_latlon
                 
-                # Create simple map with just user location
-                m = folium.Map(
-                    location=[center_lat, center_lon],
-                    zoom_start=14
+                # Create simple map with location button
+                m = mapping.create_hazard_map(
+                    pd.DataFrame(),  # Empty dataframe
+                    center_lat=center_lat,
+                    center_lon=center_lon,
+                    zoom=14,
+                    use_cluster=False,
+                    add_layer_control=False,
+                    add_legend=False,
+                    add_location_button=True  # Enable location button
                 )
                 
                 # Add user location marker
@@ -349,7 +355,7 @@ def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
                     fill=True,
                     fillColor="#3B82F6",
                     fillOpacity=0.7,
-                    popup="📍 You are here",
+                    popup="You are here",
                     tooltip="Your current location"
                 ).add_to(m)
                 
@@ -357,17 +363,20 @@ def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
                 mapping.display_map_in_streamlit(m, height=600)
         return
     
-    # Create map with hazards
+    # Create map with hazards and location button
     with st.spinner("Generating map..."):
         center_lat, center_lon = center_latlon
         
-        # Create hazard map without clustering to avoid blank map issue
+        # Create hazard map with location button
         hazard_map = mapping.create_hazard_map(
             df,
             center_lat=center_lat,
             center_lon=center_lon,
-            zoom=14,  # Slightly zoomed for local view
-            use_cluster=False  # Force no clustering to avoid blank map bug
+            zoom=14,
+            use_cluster=False,
+            add_layer_control=False,
+            add_legend=False,
+            add_location_button=True  # Enable Google Maps style location button
         )
         
         # Add user location marker if available
@@ -379,15 +388,21 @@ def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
                 fill=True,
                 fillColor="#3B82F6",
                 fillOpacity=0.7,
-                popup="📍 You are here",
+                popup="You are here",
                 tooltip="Your current location"
             ).add_to(hazard_map)
+        
+        # Clean up any remaining UI elements that might cause white boxes
+        for key, child in list(hazard_map._children.items()):
+            child_type = str(type(child)).lower()
+            if 'layercontrol' in child_type:  # Keep our location button
+                del hazard_map._children[key]
         
         # Display map
         mapping.display_map_in_streamlit(hazard_map, height=600)
     
-    # Simple info about the map
-    st.info(f"Showing {len(df)} hazards. Click on markers for details.")
+    # Map info with location button explanation
+    st.info(f"Showing {len(df)} hazards. Click markers for details. Use the location button (📍) to center map on your current position.")
 
 
 # ============================================================================
@@ -413,7 +428,23 @@ def display_statistics(df: pd.DataFrame):
     st.bar_chart(type_df.set_index('Type'))
     
     # Hazards by severity
-
+    st.markdown("### Hazards by Severity")
+    severity_counts = df['severity'].value_counts()
+    
+    col1, col2, col3, col4 = st.columns(4)
+    for col, severity in zip([col1, col2, col3, col4], ['critical', 'high', 'medium', 'low']):
+        with col:
+            count = severity_counts.get(severity, 0)
+            color = SEVERITY_COLORS.get(severity, '#3B82F6')
+            st.markdown(
+                f"<div style='text-align: center; padding: 20px; "
+                f"background-color: {color}20; border-radius: 10px; "
+                f"border-left: 5px solid {color};'>"
+                f"<h2 style='color: {color}; margin: 0;'>{count}</h2>"
+                f"<p style='margin: 5px 0 0 0;'>{severity.title()}</p>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
     
     # Time series
     if 'timestamp' in df.columns and not df['timestamp'].isna().all():

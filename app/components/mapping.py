@@ -32,10 +32,10 @@ from ..config import (
     SEVERITY_COLORS
 )
 
-# Extract map settings
-INITIAL_LAT = MAP_SETTINGS.get('INITIAL_LAT', 28.6139)
-INITIAL_LON = MAP_SETTINGS.get('INITIAL_LON', 77.2090)
-INITIAL_ZOOM = MAP_SETTINGS.get('INITIAL_ZOOM', 12)
+# Extract map settings with corrected keys
+INITIAL_LAT = MAP_SETTINGS.get('center_lat', 28.6139)
+INITIAL_LON = MAP_SETTINGS.get('center_lon', 77.2090)
+INITIAL_ZOOM = MAP_SETTINGS.get('zoom', 12)
 
 
 # ============================================================================
@@ -131,7 +131,10 @@ def create_hazard_map(
     center_lat: float = INITIAL_LAT,
     center_lon: float = INITIAL_LON,
     zoom: int = INITIAL_ZOOM,
-    use_cluster: bool = True
+    use_cluster: bool = True,
+    add_layer_control: bool = False,
+    add_legend: bool = False,
+    add_location_button: bool = True
 ) -> folium.Map:
     """
     Create an interactive Folium map with hazard markers.
@@ -142,6 +145,9 @@ def create_hazard_map(
         center_lon: Map center longitude
         zoom: Initial zoom level
         use_cluster: Whether to use marker clustering for dense areas
+        add_layer_control: Whether to add layer control widget
+        add_legend: Whether to add severity legend
+        add_location_button: Whether to add "My Location" button
         
     Returns:
         Folium Map object with hazard markers
@@ -162,10 +168,11 @@ def create_hazard_map(
         force_separate_button=True
     ).add_to(hazard_map)
     
-    # Add layer control
-    folium.LayerControl().add_to(hazard_map)
+    # Add location button (Google Maps style)
+    if add_location_button:
+        _add_location_button(hazard_map)
     
-    # If no hazards, return empty map
+    # If no hazards, return map with location button
     if hazards_df.empty:
         print("ℹ️ No hazards to display on map")
         return hazard_map
@@ -175,7 +182,7 @@ def create_hazard_map(
         marker_cluster = plugins.MarkerCluster(
             name='Hazard Clusters',
             overlay=True,
-            control=True,
+            control=add_layer_control,
             icon_create_function=None
         ).add_to(hazard_map)
     
@@ -267,11 +274,228 @@ def create_hazard_map(
             print(f"⚠️ Error adding marker for hazard {idx}: {e}")
             continue
     
-    # Add legend
-    _add_map_legend(hazard_map)
+    # Only add layer control if requested
+    if add_layer_control:
+        folium.LayerControl(collapsed=True).add_to(hazard_map)
+    
+    # Only add legend if requested
+    if add_legend:
+        _add_map_legend(hazard_map)
     
     print(f"✅ Created map with {len(hazards_df)} hazard marker(s)")
     return hazard_map
+
+
+def _add_location_button(map_object: folium.Map) -> None:
+    """
+    Add a location button to the map (Google Maps style).
+    
+    Args:
+        map_object: Folium Map object to add location button to
+    """
+    location_button_html = """
+    <div id="location-button" style="
+        position: fixed;
+        top: 80px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        background-color: white;
+        border: 2px solid rgba(0,0,0,0.2);
+        border-radius: 6px;
+        cursor: pointer;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        transition: all 0.2s;
+    " onclick="getMyLocation()" onmouseover="this.style.backgroundColor='#f5f5f5'" 
+       onmouseout="this.style.backgroundColor='white'"
+       title="Go to my location">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6"></path>
+            <path d="m21 12-6 0m-6 0-6 0"></path>
+        </svg>
+    </div>
+
+    <style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    </style>
+
+    <script>
+    function getMyLocation() {
+        const button = document.getElementById('location-button');
+        
+        // Add loading animation
+        button.style.backgroundColor = '#1976d2';
+        button.style.color = 'white';
+        button.innerHTML = '<div style="width: 16px; height: 16px; border: 2px solid white; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>';
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    // Try to get the Leaflet map instance
+                    let mapInstance = null;
+                    
+                    // Look for map in window objects
+                    for (let key in window) {
+                        if (window[key] && typeof window[key] === 'object' && 
+                            window[key].setView && typeof window[key].setView === 'function') {
+                            mapInstance = window[key];
+                            break;
+                        }
+                    }
+                    
+                    // Alternative: look for map in global scope
+                    if (!mapInstance && typeof map !== 'undefined') {
+                        mapInstance = map;
+                    }
+                    
+                    // If still no map, try to find it in the DOM
+                    if (!mapInstance) {
+                        const mapContainer = document.querySelector('.folium-map');
+                        if (mapContainer && mapContainer._leaflet_map) {
+                            mapInstance = mapContainer._leaflet_map;
+                        }
+                    }
+                    
+                    if (mapInstance) {
+                        // Center map on user location
+                        mapInstance.setView([lat, lon], 16);
+                        
+                        // Remove existing user markers
+                        if (window.userLocationMarker) {
+                            mapInstance.removeLayer(window.userLocationMarker);
+                        }
+                        if (window.userAccuracyCircle) {
+                            mapInstance.removeLayer(window.userAccuracyCircle);
+                        }
+                        
+                        // Add new user location marker
+                        if (typeof L !== 'undefined') {
+                            window.userLocationMarker = L.circleMarker([lat, lon], {
+                                radius: 8,
+                                fillColor: '#1976d2',
+                                color: '#ffffff',
+                                weight: 3,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            }).addTo(mapInstance).bindPopup('You are here');
+                            
+                            // Add accuracy circle
+                            const accuracy = position.coords.accuracy || 100;
+                            window.userAccuracyCircle = L.circle([lat, lon], {
+                                radius: Math.min(accuracy, 500), // Cap at 500m for visibility
+                                fillColor: '#1976d2',
+                                fillOpacity: 0.1,
+                                color: '#1976d2',
+                                weight: 1
+                            }).addTo(mapInstance);
+                        }
+                    }
+                    
+                    // Reset button
+                    resetLocationButton(button, true);
+                },
+                function(error) {
+                    console.log('Geolocation error:', error);
+                    resetLocationButton(button, false);
+                    
+                    let errorMessage = 'Unable to get your location.';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'Location access denied. Please enable location permissions.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Location information unavailable.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = 'Location request timed out.';
+                            break;
+                    }
+                    
+                    // Show error message
+                    if (typeof alert !== 'undefined') {
+                        alert(errorMessage);
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        } else {
+            resetLocationButton(button, false);
+            if (typeof alert !== 'undefined') {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+    }
+    
+    function resetLocationButton(button, success) {
+        if (success) {
+            // Success state
+            button.style.backgroundColor = '#4caf50';
+            button.style.color = 'white';
+            button.innerHTML = '✓';
+            
+            setTimeout(() => {
+                button.style.backgroundColor = 'white';
+                button.style.color = 'black';
+                button.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6"></path>
+                        <path d="m21 12-6 0m-6 0-6 0"></path>
+                    </svg>
+                `;
+            }, 1500);
+        } else {
+            // Error state
+            button.style.backgroundColor = '#f44336';
+            button.style.color = 'white';
+            button.innerHTML = '✗';
+            
+            setTimeout(() => {
+                button.style.backgroundColor = 'white';
+                button.style.color = 'black';
+                button.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6"></path>
+                        <path d="m21 12-6 0m-6 0-6 0"></path>
+                    </svg>
+                `;
+            }, 2000);
+        }
+    }
+    
+    // Initialize map reference when DOM loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Try to find and store map reference
+        setTimeout(function() {
+            const mapContainers = document.querySelectorAll('.leaflet-container');
+            if (mapContainers.length > 0) {
+                const mapContainer = mapContainers[0];
+                if (mapContainer._leaflet_map) {
+                    window.leafletMap = mapContainer._leaflet_map;
+                }
+            }
+        }, 1000);
+    });
+    </script>
+    """
+    
+    map_object.get_root().html.add_child(folium.Element(location_button_html))
 
 
 def create_heatmap(
