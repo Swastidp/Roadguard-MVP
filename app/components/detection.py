@@ -5,49 +5,39 @@ Uses the custom trained best.pt model for road hazard detection.
 Team: Autono Minds | VW Hackathon 2025
 """
 
-"""
-Detection module using YOLOv11 + SE Attention trained by Team Autono Minds.
-Uses the custom trained best.pt model for road hazard detection.
-
-Team: Autono Minds | VW Hackathon 2025
-"""
-
 import os
 import sys
-
-# Handle OpenCV import for cloud deployment
-try:
-    import cv2
-    print("✅ OpenCV imported successfully")
-except ImportError as e:
-    print(f"⚠️ OpenCV import issue: {e}")
-    # Try alternative import
-    try:
-        import cv2
-        print("✅ OpenCV imported on retry")
-    except Exception as e2:
-        print(f"❌ OpenCV failed completely: {e2}")
-        raise ImportError(f"OpenCV not available: {e2}")
-
-# Set OpenCV to headless mode for cloud deployment
-if 'STREAMLIT_SERVER_PORT' in os.environ or 'STREAMLIT_CLOUD' in os.environ:
-    # Running on Streamlit Cloud
-    os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '0'
-    print("🌐 OpenCV configured for Streamlit Cloud deployment")
-
-
-# Rest of your imports...
-
-
-import numpy as np
 from pathlib import Path
 from typing import Optional, List, Tuple, Dict, Union
+import numpy as np
 import streamlit as st
+
+# Configure for Streamlit Cloud deployment BEFORE OpenCV import
+def configure_opencv_cloud():
+    """Configure OpenCV for Streamlit Cloud deployment."""
+    os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '0'
+    os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+    if 'STREAMLIT_SERVER_PORT' in os.environ:
+        os.environ['DISPLAY'] = ':99'
+        print("🌐 Detected Streamlit Cloud - configuring headless mode")
+
+# Apply configuration
+configure_opencv_cloud()
+
+# Import OpenCV with cloud-safe configuration
+try:
+    import cv2
+    cv2.setUseOptimized(True)
+    print("✅ OpenCV loaded successfully for cloud deployment")
+except Exception as e:
+    st.error(f"Critical: OpenCV failed to load - {e}")
+    st.stop()
 
 try:
     from ultralytics import YOLO
 except ImportError:
-    raise ImportError("ultralytics package is required. Install with: pip install ultralytics")
+    st.error("ultralytics package is required. Install with: pip install ultralytics")
+    st.stop()
 
 from ..config import (
     MODEL_PATH_PT,
@@ -380,18 +370,10 @@ def _draw_team_badge(image: np.ndarray, team: str, model_info: str):
     )
 
 
-# Keep existing utility functions
 def classify_severity(class_id: int, bbox_area: float) -> str:
     """
     Classify hazard severity based on class and size.
     Updated for Team Autono Minds' YOLOv11 model classes.
-    
-    Args:
-        class_id: Class ID (0=longitudinal_crack, 1=transverse_crack, 2=alligator_crack, 3=pothole, 4=other_corruption)
-        bbox_area: Bounding box area in pixels
-        
-    Returns:
-        Severity level: 'critical', 'high', 'medium', or 'low'
     """
     # Size thresholds (in pixels)
     LARGE_THRESHOLD = 30000
@@ -399,14 +381,12 @@ def classify_severity(class_id: int, bbox_area: float) -> str:
     
     # Map class IDs to your trained classes
     if class_id == 0:  # longitudinal_crack
-        # Generally less severe, parallel to traffic flow
         if bbox_area > LARGE_THRESHOLD:
             return 'medium'
         else:
             return 'low'
     
     elif class_id == 1:  # transverse_crack (your best performing class - 69.97%)
-        # More disruptive, crosses traffic flow
         if bbox_area > LARGE_THRESHOLD:
             return 'high'
         elif bbox_area > MEDIUM_THRESHOLD:
@@ -415,14 +395,12 @@ def classify_severity(class_id: int, bbox_area: float) -> str:
             return 'low'
     
     elif class_id == 2:  # alligator_crack (challenging class - 10.10%)
-        # Indicates structural failure, always serious
         if bbox_area > MEDIUM_THRESHOLD:
             return 'critical'
         else:
             return 'high'
     
     elif class_id == 3:  # pothole (62.34% mAP)
-        # Direct vehicle damage risk
         if bbox_area > LARGE_THRESHOLD:
             return 'critical'
         elif bbox_area > MEDIUM_THRESHOLD:
@@ -431,11 +409,9 @@ def classify_severity(class_id: int, bbox_area: float) -> str:
             return 'medium'
     
     elif class_id == 4:  # other_corruption
-        # General road surface issues
         return 'medium'
     
     else:
-        # Unknown class ID - default to medium
         print(f"⚠️ Unknown class ID: {class_id}, defaulting to medium severity")
         return 'medium'
 
@@ -459,7 +435,7 @@ def get_detection_summary(detections: Dict[str, any], class_names: List[str] = C
         return {
             'total_detections': 0,
             'class_counts': {},
-            'severity_counts': {'critical': 0, 'high': 0, 'medium': 0, 'low': 0},  # Added this
+            'severity_counts': {'critical': 0, 'high': 0, 'medium': 0, 'low': 0},
             'avg_confidence': 0.0,
             'max_confidence': 0.0,
             'min_confidence': 0.0,
@@ -474,7 +450,7 @@ def get_detection_summary(detections: Dict[str, any], class_names: List[str] = C
         class_name = class_names[cls_id] if cls_id < len(class_names) else f"Class {cls_id}"
         class_counts[class_name] = class_counts.get(class_name, 0) + 1
     
-    # Calculate severity distribution - THIS WAS MISSING
+    # Calculate severity distribution
     severity_counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0}
     for box, cls_id in zip(boxes, classes):
         x1, y1, x2, y2 = box
@@ -486,7 +462,7 @@ def get_detection_summary(detections: Dict[str, any], class_names: List[str] = C
     return {
         'total_detections': len(boxes),
         'class_counts': class_counts,
-        'severity_counts': severity_counts,  # Added this field
+        'severity_counts': severity_counts,
         'avg_confidence': round(np.mean(confidences), 3) if confidences else 0.0,
         'max_confidence': round(max(confidences), 3) if confidences else 0.0,
         'min_confidence': round(min(confidences), 3) if confidences else 0.0,

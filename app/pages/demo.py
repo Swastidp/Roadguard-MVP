@@ -1,17 +1,29 @@
 """
 Demo page for live hazard detection.
+Cloud deployment compatible.
 
-This module provides an interactive demo interface for testing the hazard detection
-system with uploaded images/videos or sample data.
+Team: Autono Minds | VW Hackathon 2025
 """
 
 import streamlit as st
-import cv2
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 import time
+
+# Configure for Streamlit Cloud BEFORE OpenCV
+import os
+os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '0'
+os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+
+# Import OpenCV with cloud configuration
+try:
+    import cv2
+    cv2.setUseOptimized(True)
+except ImportError as e:
+    st.error(f"OpenCV import failed: {e}")
+    st.stop()
 
 # Import components
 import sys
@@ -208,7 +220,7 @@ def process_image(
         col1, col2 = st.columns(2)
         
         with col1:
-            st.image(utils.bgr_to_rgb(image), caption="Original", use_container_width=True)
+            st.image(utils.bgr_to_rgb(image), caption="Original", width='stretch')
         
         # Load model
         with st.spinner("Loading detection model..."):
@@ -254,7 +266,7 @@ def process_image(
             st.image(
                 utils.bgr_to_rgb(processed_image),
                 caption="Processed",
-                use_container_width=True
+                width='stretch'
             )
         
         # Display statistics
@@ -265,7 +277,7 @@ def process_image(
         if detections['detection_count'] > 0:
             st.subheader("📋 Detection Details")
             details_df = create_detection_dataframe(detections)
-            st.dataframe(details_df, use_container_width=True)
+            st.dataframe(details_df, width='stretch')
         
         # Download button
         st.subheader("💾 Download Results")
@@ -355,7 +367,10 @@ def process_video(
                 display_video_results(results)
             
             # Cleanup
-            video_path.unlink(missing_ok=True)
+            try:
+                video_path.unlink(missing_ok=True)
+            except:
+                pass
             
         except Exception as e:
             st.error(f"Error processing video: {str(e)}")
@@ -499,7 +514,7 @@ def process_batch(
         if batch_results:
             st.subheader("📊 Batch Results Summary")
             results_df = pd.DataFrame(batch_results)
-            st.dataframe(results_df, use_container_width=True)
+            st.dataframe(results_df, width='stretch')
             
             # Summary metrics
             col1, col2, col3 = st.columns(3)
