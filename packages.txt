@@ -1,0 +1,16 @@
+libgl1-mesa-glx
+libglib2.0-0
+libsm6
+libxext6
+libxrender-dev
+libgomp1
+libgthread-2.0-0
+libgcc-s1
+libxrandr2
+libxss1
+libxcursor1
+libxcomposite1
+libxdamage1
+libxfixes3
+libxtst6
+libxi6
