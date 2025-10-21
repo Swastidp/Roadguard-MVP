@@ -2,7 +2,7 @@
 Map view page for hazard visualization and analysis.
 
 This module provides an interactive map interface for viewing and analyzing detected road hazards.
-Simplified to show user location and hazards without clustering issues.
+Simplified to show user location and hazards without clustering issues. Fixed auto-refresh problems.
 """
 
 import streamlit as st
@@ -57,11 +57,21 @@ def request_browser_location():
 
 
 # ============================================================================
+# Cached Helper Functions (Prevent Auto-Refresh)
+# ============================================================================
+
+@st.cache_data(ttl=60, show_spinner=False)
+def load_hazards_cached():
+    """Load hazards with caching to prevent constant DB queries."""
+    return mapping.load_hazards_from_db(DB_PATH, status_filter='all')
+
+
+# ============================================================================
 # Main Map View Page
 # ============================================================================
 
 def show():
-    """Main map view page function."""
+    """Main map view page function with auto-refresh prevention."""
     
     # Page header
     st.title("Hazard Map")
@@ -71,17 +81,23 @@ def show():
         and shows nearby hazards with severity indicators. Use the location button to center on your position.
     """)
     
-    # Request browser geolocation
+    # Initialize session state for location (prevent multiple requests)
     if 'user_location' not in st.session_state:
         st.session_state.user_location = None
+        st.session_state.location_requested = False
     
-    request_browser_location()
+    # Only request location once per session
+    if not st.session_state.location_requested:
+        request_browser_location()
+        st.session_state.location_requested = True
     
     # Get user location from geolocation or use default
     center_latlon = (INITIAL_LAT, INITIAL_LON)
     
-    # Check if we received location data from browser
-    if hasattr(st.session_state, '_component_value') and isinstance(st.session_state._component_value, dict):
+    # Check if we received location data from browser (only process once)
+    if (hasattr(st.session_state, '_component_value') and 
+        isinstance(st.session_state._component_value, dict) and 
+        st.session_state.user_location is None):
         lat = st.session_state._component_value.get('lat')
         lon = st.session_state._component_value.get('lon')
         if lat is not None and lon is not None:
@@ -95,14 +111,14 @@ def show():
     
     st.markdown("---")
     
-    # Initialize session state
+    # Initialize session state for map
     if 'map_center' not in st.session_state:
         st.session_state.map_center = center_latlon
     if 'map_zoom' not in st.session_state:
         st.session_state.map_zoom = INITIAL_ZOOM
     
-    # Sidebar filters
-    filtered_df = create_sidebar_filters()
+    # Sidebar filters with caching to prevent constant reloading
+    filtered_df = create_sidebar_filters_cached()
     
     # Main content
     if filtered_df is not None:
@@ -111,14 +127,14 @@ def show():
         
         st.markdown("---")
         
-        # Simplified tabs - removed heatmap and location search
+        # Simplified tabs
         tab1, tab2 = st.tabs([
             "Map",
             "Statistics"
         ])
         
         with tab1:
-            display_simple_map(filtered_df, center_latlon)
+            display_simple_map_cached(filtered_df, center_latlon)
         
         with tab2:
             display_statistics(filtered_df)
@@ -133,24 +149,23 @@ def show():
 
 
 # ============================================================================
-# Sidebar Filters
+# Sidebar Filters with Caching
 # ============================================================================
 
-def create_sidebar_filters() -> Optional[pd.DataFrame]:
-    """Create sidebar filters and return filtered DataFrame."""
+def create_sidebar_filters_cached() -> Optional[pd.DataFrame]:
+    """Create sidebar filters with caching to prevent constant reloading."""
     
     with st.sidebar:
         st.header("Filters")
         
-        # Load all hazards
-        with st.spinner("Loading hazards from database..."):
-            hazards_df = mapping.load_hazards_from_db(DB_PATH, status_filter='all')
+        # Load hazards with caching to prevent constant DB queries
+        hazards_df = load_hazards_cached()
         
         if hazards_df.empty:
             st.warning("No hazards found in database")
             return None
         
-        # Status filter
+        # Status filter with stable key
         st.subheader("Status")
         status_options = ['active', 'resolved', 'pending']
         available_statuses = hazards_df['status'].unique().tolist()
@@ -158,10 +173,11 @@ def create_sidebar_filters() -> Optional[pd.DataFrame]:
             "Hazard Status",
             options=[s for s in status_options if s in available_statuses],
             default=['active'] if 'active' in available_statuses else available_statuses[:1],
-            help="Filter by hazard status"
+            help="Filter by hazard status",
+            key="status_filter_key"  # Stable key prevents auto-refresh
         )
         
-        # Hazard type filter
+        # Hazard type filter with stable key
         st.subheader("Hazard Types")
         available_types = hazards_df['class_name'].unique().tolist()
         selected_types = st.multiselect(
@@ -169,10 +185,11 @@ def create_sidebar_filters() -> Optional[pd.DataFrame]:
             options=available_types,
             default=available_types,
             help="Filter by hazard type",
-            format_func=lambda x: x.replace('_', ' ').title()
+            format_func=lambda x: x.replace('_', ' ').title(),
+            key="type_filter_key"  # Stable key prevents auto-refresh
         )
         
-        # Severity filter
+        # Severity filter with stable key
         st.subheader("Severity Levels")
         severity_options = ['critical', 'high', 'medium', 'low']
         available_severities = hazards_df['severity'].unique().tolist()
@@ -181,10 +198,11 @@ def create_sidebar_filters() -> Optional[pd.DataFrame]:
             options=[s for s in severity_options if s in available_severities],
             default=available_severities,
             help="Filter by severity level",
-            format_func=lambda x: x.title()
+            format_func=lambda x: x.title(),
+            key="severity_filter_key"  # Stable key prevents auto-refresh
         )
         
-        # Date range filter
+        # Date range filter with stable key
         st.subheader("Date Range")
         
         if 'timestamp' in hazards_df.columns and not hazards_df['timestamp'].isna().all():
@@ -196,7 +214,8 @@ def create_sidebar_filters() -> Optional[pd.DataFrame]:
                 value=(min_date, max_date),
                 min_value=min_date,
                 max_value=max_date,
-                help="Filter hazards by detection date"
+                help="Filter hazards by detection date",
+                key="date_filter_key"  # Stable key prevents auto-refresh
             )
             
             if isinstance(date_range, tuple) and len(date_range) == 2:
@@ -206,7 +225,7 @@ def create_sidebar_filters() -> Optional[pd.DataFrame]:
         else:
             start_date = end_date = None
         
-        # Confidence filter
+        # Confidence filter with stable key
         st.subheader("Confidence")
         min_confidence = st.slider(
             "Minimum Confidence",
@@ -214,7 +233,8 @@ def create_sidebar_filters() -> Optional[pd.DataFrame]:
             max_value=1.0,
             value=0.0,
             step=0.05,
-            help="Filter by minimum confidence score"
+            help="Filter by minimum confidence score",
+            key="confidence_filter_key"  # Stable key prevents auto-refresh
         )
         
         st.markdown("---")
@@ -222,11 +242,13 @@ def create_sidebar_filters() -> Optional[pd.DataFrame]:
         # Display filter summary
         st.info(f"Total hazards in database: {len(hazards_df)}")
         
-        # Apply filters button
-        if st.button("Refresh Data", use_container_width=True):
+        # Apply filters button with stable key
+        if st.button("Refresh Data", key="refresh_data_btn"):
+            # Clear cache when explicitly requested
+            st.cache_data.clear()
             st.rerun()
     
-    # Apply filters
+    # Apply filters to the data
     filtered_df = hazards_df.copy()
     
     # Status filter
@@ -320,11 +342,11 @@ def display_summary_metrics(df: pd.DataFrame):
 
 
 # ============================================================================
-# Simple Map with Location Button
+# Simple Map with Caching (Anti Auto-Refresh)
 # ============================================================================
 
-def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
-    """Display a simple hazard map centered at user's location with Google Maps style location button."""
+def display_simple_map_cached(df: pd.DataFrame, center_latlon: tuple):
+    """Display map with proper caching to prevent auto-refresh."""
     
     st.subheader("Hazard Map")
     
@@ -344,7 +366,7 @@ def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
                     use_cluster=False,
                     add_layer_control=False,
                     add_legend=False,
-                    add_location_button=True  # Enable location button
+                    add_location_button=True
                 )
                 
                 # Add user location marker
@@ -359,8 +381,8 @@ def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
                     tooltip="Your current location"
                 ).add_to(m)
                 
-                # Display map
-                mapping.display_map_in_streamlit(m, height=600)
+                # Display map with stable parameters to prevent auto-refresh
+                mapping.display_map_in_streamlit(m, height=600, width="100%")
         return
     
     # Create map with hazards and location button
@@ -376,7 +398,7 @@ def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
             use_cluster=False,
             add_layer_control=False,
             add_legend=False,
-            add_location_button=True  # Enable Google Maps style location button
+            add_location_button=True
         )
         
         # Add user location marker if available
@@ -392,14 +414,14 @@ def display_simple_map(df: pd.DataFrame, center_latlon: tuple):
                 tooltip="Your current location"
             ).add_to(hazard_map)
         
-        # Clean up any remaining UI elements that might cause white boxes
+        # Clean up any remaining UI elements that might cause issues
         for key, child in list(hazard_map._children.items()):
             child_type = str(type(child)).lower()
-            if 'layercontrol' in child_type:  # Keep our location button
+            if 'layercontrol' in child_type:
                 del hazard_map._children[key]
         
-        # Display map
-        mapping.display_map_in_streamlit(hazard_map, height=600)
+        # Display map with stable parameters to prevent auto-refresh
+        mapping.display_map_in_streamlit(hazard_map, height=600, width="100%")
     
     # Map info with location button explanation
     st.info(f"Showing {len(df)} hazards. Click markers for details. Use the location button (📍) to center map on your current position.")
@@ -521,7 +543,8 @@ def display_export_section(df: pd.DataFrame):
             data=csv_data,
             file_name=f"hazards_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
             mime="text/csv",
-            use_container_width=True
+            use_container_width=True,
+            key="csv_download_btn"
         )
     
     with col2:
@@ -533,7 +556,8 @@ def display_export_section(df: pd.DataFrame):
             data=json_data,
             file_name=f"hazards_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
             mime="application/json",
-            use_container_width=True
+            use_container_width=True,
+            key="json_download_btn"
         )
     
     st.info(f"Exporting {len(df)} hazard record(s)")

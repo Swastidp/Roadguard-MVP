@@ -288,32 +288,33 @@ def create_hazard_map(
 
 def _add_location_button(map_object: folium.Map) -> None:
     """
-    Add a location button to the map (Google Maps style).
+    Add a working location button to the map (Google Maps style).
     
     Args:
         map_object: Folium Map object to add location button to
     """
     location_button_html = """
     <div id="location-button" style="
-        position: fixed;
-        top: 80px;
-        right: 10px;
+        position: absolute;
+        top: 10px;
+        right: 50px;
         width: 40px;
         height: 40px;
-        background-color: white;
-        border: 2px solid rgba(0,0,0,0.2);
+        background-color: #ffffff;
+        border: 1px solid rgba(0,0,0,0.3);
         border-radius: 6px;
         cursor: pointer;
-        z-index: 9999;
+        z-index: 1000;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         transition: all 0.2s;
-    " onclick="getMyLocation()" onmouseover="this.style.backgroundColor='#f5f5f5'" 
-       onmouseout="this.style.backgroundColor='white'"
+    " onclick="getMyLocation()" 
+       onmouseover="this.style.backgroundColor='#f8f9fa'; this.style.transform='scale(1.05)'" 
+       onmouseout="this.style.backgroundColor='#ffffff'; this.style.transform='scale(1)'"
        title="Go to my location">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2.5">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M12 1v6m0 6v6"></path>
             <path d="m21 12-6 0m-6 0-6 0"></path>
@@ -325,178 +326,239 @@ def _add_location_button(map_object: folium.Map) -> None:
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+    #location-button {
+        font-family: Arial, sans-serif;
+    }
     </style>
 
     <script>
+    // Global variables for map and markers
+    window.mapInstance = null;
+    window.userLocationMarker = null;
+    window.userAccuracyCircle = null;
+    
     function getMyLocation() {
+        console.log('Location button clicked');
         const button = document.getElementById('location-button');
+        
+        if (!button) {
+            console.error('Location button not found');
+            return;
+        }
         
         // Add loading animation
         button.style.backgroundColor = '#1976d2';
         button.style.color = 'white';
+        button.style.transform = 'scale(1)';
         button.innerHTML = '<div style="width: 16px; height: 16px; border: 2px solid white; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>';
         
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    
-                    // Try to get the Leaflet map instance
-                    let mapInstance = null;
-                    
-                    // Look for map in window objects
-                    for (let key in window) {
-                        if (window[key] && typeof window[key] === 'object' && 
-                            window[key].setView && typeof window[key].setView === 'function') {
-                            mapInstance = window[key];
-                            break;
-                        }
-                    }
-                    
-                    // Alternative: look for map in global scope
-                    if (!mapInstance && typeof map !== 'undefined') {
-                        mapInstance = map;
-                    }
-                    
-                    // If still no map, try to find it in the DOM
-                    if (!mapInstance) {
-                        const mapContainer = document.querySelector('.folium-map');
-                        if (mapContainer && mapContainer._leaflet_map) {
-                            mapInstance = mapContainer._leaflet_map;
-                        }
-                    }
-                    
-                    if (mapInstance) {
-                        // Center map on user location
-                        mapInstance.setView([lat, lon], 16);
-                        
-                        // Remove existing user markers
-                        if (window.userLocationMarker) {
-                            mapInstance.removeLayer(window.userLocationMarker);
-                        }
-                        if (window.userAccuracyCircle) {
-                            mapInstance.removeLayer(window.userAccuracyCircle);
-                        }
-                        
-                        // Add new user location marker
-                        if (typeof L !== 'undefined') {
-                            window.userLocationMarker = L.circleMarker([lat, lon], {
-                                radius: 8,
-                                fillColor: '#1976d2',
-                                color: '#ffffff',
-                                weight: 3,
-                                opacity: 1,
-                                fillOpacity: 0.8
-                            }).addTo(mapInstance).bindPopup('You are here');
-                            
-                            // Add accuracy circle
-                            const accuracy = position.coords.accuracy || 100;
-                            window.userAccuracyCircle = L.circle([lat, lon], {
-                                radius: Math.min(accuracy, 500), // Cap at 500m for visibility
-                                fillColor: '#1976d2',
-                                fillOpacity: 0.1,
-                                color: '#1976d2',
-                                weight: 1
-                            }).addTo(mapInstance);
-                        }
-                    }
-                    
-                    // Reset button
-                    resetLocationButton(button, true);
-                },
-                function(error) {
-                    console.log('Geolocation error:', error);
-                    resetLocationButton(button, false);
-                    
-                    let errorMessage = 'Unable to get your location.';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage = 'Location access denied. Please enable location permissions.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage = 'Location information unavailable.';
-                            break;
-                        case error.TIMEOUT:
-                            errorMessage = 'Location request timed out.';
-                            break;
-                    }
-                    
-                    // Show error message
-                    if (typeof alert !== 'undefined') {
-                        alert(errorMessage);
-                    }
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 60000
-                }
-            );
-        } else {
+        // Check if geolocation is supported
+        if (!navigator.geolocation) {
+            console.error('Geolocation not supported');
             resetLocationButton(button, false);
-            if (typeof alert !== 'undefined') {
-                alert('Geolocation is not supported by this browser.');
+            alert('Geolocation is not supported by this browser.');
+            return;
+        }
+        
+        console.log('Requesting geolocation...');
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                console.log('Position received:', position.coords);
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const accuracy = position.coords.accuracy || 100;
+                
+                // Find the map instance
+                findMapInstance();
+                
+                if (window.mapInstance) {
+                    console.log('Map instance found, centering on location');
+                    
+                    // Center map on user location
+                    window.mapInstance.setView([lat, lon], 16);
+                    
+                    // Remove existing user markers
+                    if (window.userLocationMarker) {
+                        window.mapInstance.removeLayer(window.userLocationMarker);
+                    }
+                    if (window.userAccuracyCircle) {
+                        window.mapInstance.removeLayer(window.userAccuracyCircle);
+                    }
+                    
+                    // Add new user location marker (blue circle)
+                    window.userLocationMarker = L.circleMarker([lat, lon], {
+                        radius: 8,
+                        fillColor: '#1976d2',
+                        color: '#ffffff',
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(window.mapInstance).bindPopup('📍 You are here');
+                    
+                    // Add accuracy circle (light blue area)
+                    window.userAccuracyCircle = L.circle([lat, lon], {
+                        radius: Math.min(accuracy, 500), // Cap at 500m for visibility
+                        fillColor: '#1976d2',
+                        fillOpacity: 0.1,
+                        color: '#1976d2',
+                        weight: 1,
+                        opacity: 0.3
+                    }).addTo(window.mapInstance);
+                    
+                    console.log('User location marker added successfully');
+                    resetLocationButton(button, true);
+                } else {
+                    console.error('Map instance not found');
+                    resetLocationButton(button, false);
+                    alert('Unable to find map. Please refresh the page.');
+                }
+            },
+            function(error) {
+                console.error('Geolocation error:', error);
+                resetLocationButton(button, false);
+                
+                let errorMessage = 'Unable to get your location.';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Location access denied. Please enable location permissions and try again.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information unavailable.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Location request timed out. Please try again.';
+                        break;
+                }
+                
+                alert(errorMessage);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    }
+    
+    function findMapInstance() {
+        // Try multiple methods to find the Leaflet map instance
+        
+        // Method 1: Look for Leaflet container in DOM
+        const leafletContainers = document.querySelectorAll('.leaflet-container');
+        for (let container of leafletContainers) {
+            if (container._leaflet_map) {
+                window.mapInstance = container._leaflet_map;
+                console.log('Map found via DOM container');
+                return;
             }
         }
+        
+        // Method 2: Look in window objects
+        for (let key in window) {
+            if (window[key] && 
+                typeof window[key] === 'object' && 
+                window[key].setView && 
+                typeof window[key].setView === 'function' &&
+                window[key].getCenter &&
+                typeof window[key].getCenter === 'function') {
+                window.mapInstance = window[key];
+                console.log('Map found via window object:', key);
+                return;
+            }
+        }
+        
+        // Method 3: Check for global map variable
+        if (typeof map !== 'undefined' && map && map.setView) {
+            window.mapInstance = map;
+            console.log('Map found via global map variable');
+            return;
+        }
+        
+        // Method 4: Wait and try again
+        setTimeout(() => {
+            const containers = document.querySelectorAll('.leaflet-container');
+            if (containers.length > 0 && containers[0]._leaflet_map) {
+                window.mapInstance = containers[0]._leaflet_map;
+                console.log('Map found after delay');
+            }
+        }, 1000);
+        
+        console.log('Map instance not found immediately, will retry');
     }
     
     function resetLocationButton(button, success) {
-        if (success) {
-            // Success state
-            button.style.backgroundColor = '#4caf50';
-            button.style.color = 'white';
-            button.innerHTML = '✓';
-            
-            setTimeout(() => {
-                button.style.backgroundColor = 'white';
-                button.style.color = 'black';
-                button.innerHTML = `
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6"></path>
-                        <path d="m21 12-6 0m-6 0-6 0"></path>
-                    </svg>
-                `;
-            }, 1500);
-        } else {
-            // Error state
-            button.style.backgroundColor = '#f44336';
-            button.style.color = 'white';
-            button.innerHTML = '✗';
-            
-            setTimeout(() => {
-                button.style.backgroundColor = 'white';
-                button.style.color = 'black';
-                button.innerHTML = `
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6"></path>
-                        <path d="m21 12-6 0m-6 0-6 0"></path>
-                    </svg>
-                `;
-            }, 2000);
-        }
+        setTimeout(() => {
+            if (success) {
+                // Success state - green with checkmark
+                button.style.backgroundColor = '#4caf50';
+                button.style.color = 'white';
+                button.style.transform = 'scale(1.05)';
+                button.innerHTML = '✓';
+                
+                setTimeout(() => {
+                    button.style.backgroundColor = '#ffffff';
+                    button.style.transform = 'scale(1)';
+                    button.innerHTML = `
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2.5">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6"></path>
+                            <path d="m21 12-6 0m-6 0-6 0"></path>
+                        </svg>
+                    `;
+                }, 1500);
+            } else {
+                // Error state - red with X
+                button.style.backgroundColor = '#f44336';
+                button.style.color = 'white';
+                button.style.transform = 'scale(1.05)';
+                button.innerHTML = '✗';
+                
+                setTimeout(() => {
+                    button.style.backgroundColor = '#ffffff';
+                    button.style.transform = 'scale(1)';
+                    button.innerHTML = `
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2.5">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6"></path>
+                            <path d="m21 12-6 0m-6 0-6 0"></path>
+                        </svg>
+                    `;
+                }, 2000);
+            }
+        }, 100);
     }
     
-    // Initialize map reference when DOM loads
+    // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
-        // Try to find and store map reference
-        setTimeout(function() {
-            const mapContainers = document.querySelectorAll('.leaflet-container');
-            if (mapContainers.length > 0) {
-                const mapContainer = mapContainers[0];
-                if (mapContainer._leaflet_map) {
-                    window.leafletMap = mapContainer._leaflet_map;
-                }
-            }
-        }, 1000);
+        console.log('DOM loaded, initializing location button');
+        findMapInstance();
     });
+    
+    // Also try when window loads
+    window.addEventListener('load', function() {
+        console.log('Window loaded, finding map instance');
+        setTimeout(findMapInstance, 500);
+    });
+    
+    // Try to find map instance periodically until found
+    let mapSearchAttempts = 0;
+    const mapSearchInterval = setInterval(() => {
+        if (!window.mapInstance && mapSearchAttempts < 10) {
+            findMapInstance();
+            mapSearchAttempts++;
+        } else if (window.mapInstance || mapSearchAttempts >= 10) {
+            clearInterval(mapSearchInterval);
+            if (window.mapInstance) {
+                console.log('Map instance found after', mapSearchAttempts, 'attempts');
+            } else {
+                console.error('Failed to find map instance after 10 attempts');
+            }
+        }
+    }, 1000);
     </script>
     """
     
     map_object.get_root().html.add_child(folium.Element(location_button_html))
-
 
 def create_heatmap(
     hazards_df: pd.DataFrame,
@@ -668,37 +730,59 @@ def get_hazards_in_radius(
 def display_map_in_streamlit(
     map_object: folium.Map,
     height: int = 600,
-    width: Optional[int] = None
+    width: Optional[str] = None
 ) -> None:
     """
-    Display a Folium map in Streamlit.
+    Display a Folium map in Streamlit without auto-refresh.
     
     Args:
         map_object: Folium Map object to display
         height: Map height in pixels
-        width: Map width in pixels (None for full width)
+        width: Map width ('100%' for full width, or None for default)
     """
     try:
         if FOLIUM_AVAILABLE:
-            # Use streamlit-folium for better integration
-            st_folium(
+            # Use streamlit-folium with fixed parameters to prevent auto-refresh
+            map_data = st_folium(
                 map_object,
-                width=width,
+                width='stretch' if width == "100%" else 700,  # Fixed deprecation warning
                 height=height,
-                returned_objects=[]
+                returned_objects=[],  # Empty to prevent unnecessary updates
+                key=None,  # No key to prevent state tracking issues
+                debug=False  # Disable debug mode to reduce refresh
             )
+                
         else:
             # Fallback to HTML rendering
             map_html = map_object._repr_html_()
+            
+            # Add custom CSS for full width
+            if width == "100%":
+                map_html = f"""
+                <style>
+                .folium-map {{
+                    width: 100% !important;
+                    height: {height}px !important;
+                }}
+                iframe {{
+                    width: 100% !important;
+                    height: {height}px !important;
+                }}
+                </style>
+                {map_html}
+                """
+            
             st.components.v1.html(
                 map_html,
                 height=height,
+                width=None if width == "100%" else 700,
                 scrolling=False
             )
             
     except Exception as e:
         st.error(f"Error displaying map: {str(e)}")
         print(f"❌ Error displaying map: {e}")
+
 
 
 # ============================================================================
