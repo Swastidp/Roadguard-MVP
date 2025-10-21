@@ -67,11 +67,11 @@ IMG_SIZE = 640  # Input image size for YOLO
 # Class names - Based on Team Autono Minds' YOLOv11 training
 # Order MUST match your training configuration
 CLASS_NAMES = [
-    'longitudinal_crack',    # Class 0 - 59.84% mAP@0.5
-    'transverse_crack',      # Class 1 - 69.97% mAP@0.5 (Best performing)
-    'alligator_crack',       # Class 2 - 10.10% mAP@0.5 (Challenging)
-    'pothole',               # Class 3 - 62.34% mAP@0.5
-    'other_corruption'       # Class 4 - 0.0% mAP@0.5 (Not in validation)
+    'longitudinal_crack',    # Class 0 - D00
+    'transverse_crack',      # Class 1 - D10  
+    'alligator_crack',       # Class 2 - D20
+    'pothole',               # Class 3 - D40
+    'other_corruption'       # Class 4 - D43/D44
 ]
 
 # Dictionary version for modules that import DETECTION_SETTINGS
@@ -95,60 +95,63 @@ TRAINING_RESULTS = {
         'training_framework': 'Ultralytics YOLOv11 (v8.3.217)'
     },
     'overall_performance': {
-        'map50': 50.56,          # mAP@IoU=0.5
-        'map50_95': 25.04,       # mAP@IoU=0.5:0.95 (COCO standard)
-        'precision': 61.24,      # Overall precision
-        'recall': 46.55,         # Overall recall
-        'f1_score': 52.89,       # Calculated F1 score
-        'inference_speed_ms': 45  # Approximate inference time
+    'map50': 46.4,           # From notebook final epoch results
+    'map50_95': 21.8,        # From notebook final epoch results
+    'precision': 51.3,       # From notebook final epoch results
+    'recall': 44.4,          # From notebook final epoch results
+    'f1_score': 47.6,        # Calculated from P&R
+    'inference_speed_ms': 45  # Keep existing estimate
     },
     'per_class_performance': {
-        'longitudinal_crack': {
-            'map50': 59.84,
-            'precision': 65.2,
-            'recall': 54.8,
-            'difficulty': 'Medium'
-        },
-        'transverse_crack': {
-            'map50': 69.97,      # Best performing class
-            'precision': 72.1,
-            'recall': 67.3,
-            'difficulty': 'Easy'
-        },
-        'alligator_crack': {
-            'map50': 10.10,      # Most challenging class
-            'precision': 15.5,
-            'recall': 8.7,
-            'difficulty': 'Very Hard'
-        },
-        'pothole': {
-            'map50': 62.34,
-            'precision': 68.9,
-            'recall': 58.1,
-            'difficulty': 'Medium'
-        },
-        'other_corruption': {
-            'map50': 0.0,        # Not in validation set
-            'precision': 0.0,
-            'recall': 0.0,
-            'difficulty': 'Unknown'
-        }
+    'longitudinal_crack': {
+        'map50': 0.0,        # Update with actual from notebook
+        'precision': 0.0,    # Update with actual from notebook
+        'recall': 0.0,       # Update with actual from notebook
+        'difficulty': 'Hard'
     },
+    'transverse_crack': {
+        'map50': 0.0,        # Update with actual from notebook  
+        'precision': 0.0,    # Update with actual from notebook
+        'recall': 0.0,       # Update with actual from notebook
+        'difficulty': 'Medium'
+    },
+    'alligator_crack': {
+        'map50': 0.0,        # Update with actual from notebook
+        'precision': 0.0,    # Update with actual from notebook  
+        'recall': 0.0,       # Update with actual from notebook
+        'difficulty': 'Hard'
+    },
+    'pothole': {
+        'map50': 0.0,        # Update with actual from notebook
+        'precision': 0.0,    # Update with actual from notebook
+        'recall': 0.0,       # Update with actual from notebook 
+        'difficulty': 'Medium'
+    },
+    'other_corruption': {
+        'map50': 0.0,        # Update with actual from notebook
+        'precision': 0.0,    # Update with actual from notebook
+        'recall': 0.0,       # Update with actual from notebook
+        'difficulty': 'Hard'
+    }
+},
+
     'training_config': {
-        'epochs': 65,
-        'dataset_images': 6439,     # Training images
-        'validation_images': 1619,  # Validation images
-        'batch_size': 20,           # Limited by RTX 3050 4GB VRAM
-        'optimizer': 'AdamW',
-        'learning_rate': 0.002,
-        'lr_scheduler': 'cosine',
-        'class_loss_weight': 3.0,   # Increased for class imbalance
-        'box_loss_weight': 7.5,
-        'device': 'RTX 3050 Laptop GPU (4GB VRAM)',
-        'training_time': '~2 hours',
-        'patience': 30,             # Early stopping patience
-        'augmentations': ['mosaic', 'mixup', 'rotation', 'scaling']
+    'epochs': 65,                    # From notebook (though training stopped early)
+    'dataset_images': 6439,          # From notebook cell 2 output
+    'validation_images': 1619,       # From notebook cell 2 output  
+    'batch_size': 20,               # From notebook cell 10
+    'optimizer': 'AdamW',           # From notebook cell 10
+    'learning_rate': 0.002,         # From notebook cell 10
+    'final_lr': 0.001,              # From notebook cell 10
+    'lr_scheduler': 'cosine',       # From notebook (cos_lr=True)
+    'class_loss_weight': 3.0,       # From notebook cell 10
+    'box_loss_weight': 7.5,        # From notebook cell 10
+    'device': 'RTX 3050 Laptop GPU (4GB VRAM)',  # From notebook cell 1
+    'training_time': '~2 hours',    # Estimate
+    'patience': 30,                 # From notebook cell 10
+    'augmentations': ['mosaic', 'mixup', 'rotation', 'scaling', 'hsv']  # From notebook
     },
+
     'dataset_info': {
         'total_images': 8058,
         'train_split': 0.8,         # 80% training

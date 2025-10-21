@@ -1,164 +1,134 @@
-# 🚗 RoadGuard: AI-Powered Road Hazard Detection System
+# RoadGuard: AI-Powered Road Hazard Detection System
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![CI Pipeline](https://github.com/yourusername/roadguard-hackathon/workflows/CI%20Pipeline/badge.svg)](https://github.com/yourusername/roadguard-hackathon/actions)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](https://codecov.io)
+**Real-time AI-powered detection and alerting system for road hazards**
 
-> **Real-time AI-powered detection and alerting system for road hazards** 🛣️  
-> Built for VW Hackathon 2025 | Team CloudNatics
+Built for VW Hackathon 2025 | Team Autono Minds
 
-![RoadGuard Banner](docs/images/banner.png)
+## Table of Contents
 
----
+- [Overview](#overview)
+- [Features](#features)
+- [System Architecture](#system-architecture)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Model Training](#model-training)
+- [Performance Metrics](#performance-metrics)
+- [Technology Stack](#technology-stack)
+- [Hackathon Context](#hackathon-context)
+- [Future Roadmap](#future-roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [Team & Acknowledgments](#team--acknowledgments)
 
-## 📋 Table of Contents
+## Overview
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [System Architecture](#-system-architecture)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [Project Structure](#-project-structure)
-- [Model Training](#-model-training)
-- [Performance Metrics](#-performance-metrics)
-- [Technology Stack](#-technology-stack)
-- [Hackathon Context](#-hackathon-context)
-- [Future Roadmap](#-future-roadmap)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Team & Acknowledgments](#-team--acknowledgments)
+**RoadGuard** is an intelligent road hazard detection system that uses YOLOv11n to identify and alert drivers about road damage in real-time. The system detects potholes, cracks, and other road hazards, providing timely warnings while ensuring GDPR compliance through automatic face and license plate anonymization.
 
----
+### Demo Video
 
-## 🎯 Overview
+*Coming Soon*
 
-**RoadGuard** is an intelligent road hazard detection system that uses state-of-the-art computer vision (YOLOv8) to identify and alert drivers about road damage in real-time. The system detects potholes, cracks, and other road hazards, providing timely warnings based on vehicle speed and distance, while ensuring GDPR compliance through automatic face and license plate anonymization.
+### Hackathon Achievement
 
-### 🎥 Demo Video
-[![Demo Video](docs/images/demo-thumbnail.png)](https://youtu.be/your-demo-video)
-
-### 🏆 Hackathon Achievement
 - **Event**: VW Hackathon 2025
 - **Track**: Smart Mobility & Road Safety
-- **Achievement**: [Top 10 Finalist / Winner / etc.]
+- **Team**: Autono Minds
 
----
+## Features
 
-## ✨ Features
+### Core Detection
 
-### 🔍 **Core Detection**
-- **Real-time Hazard Detection**: Detects 4 types of road damage using YOLOv8
-  - 🕳️ Potholes
-  - 📏 Longitudinal Cracks
-  - 📐 Transverse Cracks
-  - 🕸️ Alligator Cracks
-- **High Accuracy**: 84.7% mAP@0.5, 62.3% mAP@0.5:0.95
-- **Fast Inference**: 45ms per image (640×480) on CPU
+- **Real-time Hazard Detection**: Detects 5 types of road damage using YOLOv11n
+  - Potholes - Road surface depressions
+  - Longitudinal Cracks - Cracks parallel to road direction
+  - Transverse Cracks - Cracks perpendicular to road direction
+  - Alligator Cracks - Interconnected crack patterns
+  - Other Corruption - General road surface damage
+- **High Accuracy**: 50.3% mAP@0.5, 23.0% mAP@0.5:0.95
+- **Fast Inference**: ~45ms per image (640×640) on RTX 3050
 
-### 🚨 **Intelligent Alerts**
-- **Physics-Based Warnings**: Calculates safe warning distances based on:
-  - Current vehicle speed
-  - Hazard severity level
-  - Road conditions (dry/wet/icy)
-  - Driver reaction time (1.5s default)
-- **Dynamic Safe Speed Recommendations**: Real-time speed calculations
+### Intelligent Features
+
+- **Physics-Based Warnings**: Calculates safe warning distances based on vehicle parameters
+- **Dynamic Speed Recommendations**: Real-time speed calculations for hazard approach
 - **Multi-Hazard Support**: Handles multiple hazards in view
-- **Directional Awareness**: Only alerts for hazards in direction of travel
+- **Directional Awareness**: Context-aware hazard alerting
 
-### 🗺️ **Geospatial Features**
+### Geospatial Features
+
 - **Interactive Hazard Map**: Cluster and heatmap visualizations
 - **Spatial Deduplication**: DBSCAN clustering (10m radius)
 - **Proximity Search**: Find hazards within configurable radius
 - **Time-based Filtering**: Filter by detection date range
 - **Status Tracking**: Active, resolved, pending states
 
-### 🔒 **Privacy Protection** (GDPR Compliant)
+### Privacy Protection (GDPR Compliant)
+
 - **Automatic Anonymization**: Detects and blurs faces/license plates
 - **Multiple Methods**: Gaussian blur, pixelation, black boxes
 - **Verification System**: Confirms no identifiable data remains
 - **Batch Processing**: Efficient handling of large datasets
 
-### 📊 **Analytics Dashboard**
+### Analytics Dashboard
+
 - **Model Performance Metrics**: Precision, recall, F1-score by class
 - **Detection Statistics**: Time series, distribution charts
 - **System Benchmarks**: Latency, FPS, memory usage
 - **Export Reports**: CSV, JSON, executive summaries
 
----
-
-## 🏗️ System Architecture
+## System Architecture
 
 ┌─────────────────────────────────────────────────────────────────┐
 │ RoadGuard System │
 ├─────────────────────────────────────────────────────────────────┤
 │ │
 │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ │
-│ │ Camera/ │─────▶│ YOLOv8 │─────▶│ Detection │ │
+│ │ Camera/ │────▶│ YOLOv11n │────▶│ Detection │ │
 │ │ Video │ │ Model │ │ Pipeline │ │
 │ │ Input │ │ (best.pt) │ └──────┬───────┘ │
 │ └──────────────┘ └──────────────┘ │ │
 │ │ │
-│ ┌─────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────┘ │
 │ │ │
 │ ┌──────────────▼──────────────┐ │
-│ │ Postprocessing Module │ │
-│ ├─────────────────────────────┤ │
-│ │ - Deduplication (DBSCAN) │ │
-│ │ - Severity Classification │ │
-│ │ - Confidence Updates │ │
-│ └──────────────┬──────────────┘ │
-│ │ │
-│ ┌──────────────▼──────────────┐ │
-│ │ Privacy Protection │ │
+│ │ Privacy Protection Module │ │
 │ ├─────────────────────────────┤ │
 │ │ - Face Detection │ │
 │ │ - Plate Detection │ │
 │ │ - Gaussian Blur/Pixelate │ │
 │ └──────────────┬──────────────┘ │
 │ │ │
-│ ┌─────────────────────▼─────────────────────┐ │
+│ ┌──────────────▼──────────────┐ │
 │ │ SQLite Database │ │
-│ ├────────────────────────────────────────────┤ │
-│ │ - Hazard Records (lat/lon/severity) │ │
+│ ├─────────────────────────────┤ │
+│ │ - Hazard Records │ │
 │ │ - Detection Metadata │ │
 │ │ - Status Tracking │ │
-│ └─────────────────┬──────────────────────────┘ │
-│ │ │
-│ ┌─────────────────▼─────────────────────┐ │
-│ │ Alert Generation System │ │
-│ ├───────────────────────────────────────┤ │
-│ │ - Warning Distance Calculation │ │
-│ │ - Safe Speed Recommendation │ │
-│ │ - Urgency Level Determination │ │
-│ │ - Haversine Distance (GPS) │ │
-│ └─────────────────┬─────────────────────┘ │
+│ └─────────────────┬───────────┘ │
 │ │ │
 │ ┌─────────────────▼─────────────────────┐ │
 │ │ Streamlit Web Interface │ │
 │ ├───────────────────────────────────────┤ │
-│ │ 🏠 Home | 🎥 Demo | 🗺️ Map │ │
-│ │ ⚠️ Alerts | 🔒 Privacy | 📊 Metrics │ │
+│ │ Home | Demo | Map | Privacy | Metrics │ │
 │ └───────────────────────────────────────┘ │
 │ │
-└───────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────┘
 
 text
 
 ### Data Flow
+
 1. **Input**: Video/image from camera or upload
-2. **Detection**: YOLOv8 inference (45ms @ 640×480)
-3. **Postprocessing**: Deduplication, classification, privacy
+2. **Detection**: YOLOv11n inference (~45ms @ 640×640)
+3. **Privacy**: Automatic face/plate anonymization
 4. **Storage**: SQLite database with spatial indexes
-5. **Alert**: Real-time warnings based on vehicle parameters
-6. **Visualization**: Interactive Streamlit dashboard
+5. **Visualization**: Interactive Streamlit dashboard
 
----
-
-## 📦 Installation
+## Installation
 
 ### Prerequisites
+
 - **Python**: 3.10 or higher
 - **Operating System**: Linux, macOS, or Windows
 - **Memory**: 4GB RAM minimum (8GB recommended)
@@ -166,12 +136,14 @@ text
 - **Optional**: GPU with CUDA support for faster inference
 
 ### Step 1: Clone Repository
-git clone https://github.com/yourusername/roadguard-hackathon.git
-cd roadguard-hackathon
+
+git clone https://github.com/Swastidp/Roadguard-MVP.git
+cd Roadguard-MVP
 
 text
 
 ### Step 2: Install UV Package Manager
+
 On macOS/Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
@@ -184,6 +156,7 @@ uv --version
 text
 
 ### Step 3: Setup Environment
+
 Sync all dependencies (creates .venv automatically)
 uv sync --all-extras
 
@@ -197,21 +170,16 @@ On Windows
 text
 
 ### Step 4: Download Models
+
 Create models directory
 mkdir -p models
 
-Download YOLOv8n for hazard detection
-Option 1: From Kaggle (recommended)
-kaggle datasets download -d your-username/roadguard-models -p models/
-unzip models/roadguard-models.zip -d models/
-
-Option 2: From Google Drive
-Download from: https://drive.google.com/your-model-link
-Place best.pt in models/ directory
-Download YOLOv8n for privacy (auto-downloads on first use)
+Place your trained best.pt model in models/ directory
+The model should be the YOLOv11n model trained on road hazards
 text
 
 ### Step 5: Initialize Database
+
 Create database with sample data
 uv run python scripts/init_database.py --with-samples
 
@@ -221,6 +189,7 @@ uv run python scripts/init_database.py
 text
 
 ### Verify Installation
+
 Run tests
 uv run pytest tests/ -v
 
@@ -229,13 +198,12 @@ uv run python -c "from app import main; print('✅ Installation successful!')"
 
 text
 
----
-
-## 🚀 Usage
+## Usage
 
 ### Running the Application
 
 #### Development Mode
+
 Start Streamlit app
 uv run streamlit run app/main.py
 
@@ -243,6 +211,7 @@ App will open at http://localhost:8501
 text
 
 #### Production Mode
+
 Run with production settings
 uv run streamlit run app/main.py --server.port 8080 --server.headless true
 
@@ -250,51 +219,36 @@ text
 
 ### Using the Application
 
-#### 1. 🏠 **Home Page**
-- Welcome screen with feature overview
-- Quick navigation to all sections
-- Performance statistics
+#### 1. Home Page (with Integrated Demo)
 
-#### 2. 🎥 **Live Demo**
+- Welcome screen with live detection demo
+- Upload images directly for testing
+- View model performance metrics
+- Real-time hazard detection results
+
+#### 2. Demo Page
+
 - **Upload Media**: Test with images or videos
 - **Adjust Settings**: Confidence threshold, privacy options
 - **View Results**: Annotated images with detection boxes
 - **Download**: Save processed images/videos
 
-Example: Process a test image
-Go to "Live Demo" tab
+#### 3. Map View
 
-Upload an image of a road
-
-Adjust confidence slider (0.5 recommended)
-
-Enable privacy blurring
-
-Click "Apply Detection"
-
-Download processed result
-
-text
-
-#### 3. 🗺️ **Hazard Map**
-- **View Map**: Interactive cluster or heatmap
+- **Interactive Map**: View hazards with clustering
 - **Filter Hazards**: By type, severity, date range
 - **Search Location**: Find hazards near GPS coordinates
 - **Export Data**: Download filtered hazards as CSV/JSON
 
-#### 4. ⚠️ **Alert Simulator**
-- **Test Scenarios**: Input vehicle speed and position
-- **View Warnings**: See calculated warning distances
-- **Route Simulation**: Test multi-hazard scenarios
-- **Adjust Settings**: Tune reaction time, friction coefficients
+#### 4. Privacy Test
 
-#### 5. 🔒 **Privacy Test**
 - **Upload Images**: Test anonymization on photos
 - **Choose Method**: Gaussian blur, pixelate, or black boxes
 - **Verify Compliance**: Automated privacy checking
 - **Batch Process**: Anonymize multiple images
 
-#### 6. 📊 **Metrics Dashboard**
+#### 5. Metrics Dashboard
+
 - **Model Performance**: Precision, recall, mAP scores
 - **Detection Stats**: Time series, distribution charts
 - **System Benchmarks**: Inference speed, FPS
@@ -316,11 +270,9 @@ uv run pytest --cov=app --cov-report=html
 
 text
 
----
+## Project Structure
 
-## 📁 Project Structure
-
-roadguard-hackathon/
+roadguard-mvp/
 ├── .github/
 │ └── workflows/
 │ └── ci.yml # CI/CD pipeline
@@ -336,7 +288,6 @@ roadguard-hackathon/
 │ └── pages/
 │ ├── demo.py # Live demo interface
 │ ├── map_view.py # Interactive map
-│ ├── alert_sim.py # Alert simulator
 │ ├── privacy_test.py # Privacy testing
 │ └── metrics.py # Performance dashboard
 ├── src/
@@ -344,19 +295,16 @@ roadguard-hackathon/
 │ └── deduplication.py # Spatial clustering
 ├── tests/
 │ ├── test_detection.py # Detection tests
-│ ├── test_alerts.py # Alert tests
 │ └── test_deduplication.py # Deduplication tests
 ├── scripts/
 │ └── init_database.py # DB initialization
 ├── models/
-│ ├── best.pt # Trained YOLOv8 model
-│ └── best_int8.tflite # Quantized model
+│ └── best.pt # Trained YOLOv11n model
 ├── data/
 │ ├── hazards.db # SQLite database
 │ └── sample_videos/ # Test videos
 ├── docs/
-│ ├── images/ # Documentation images
-│ └── notebooks/ # Jupyter notebooks
+│ └── images/ # Documentation images
 ├── pyproject.toml # Project metadata & deps
 ├── uv.lock # Locked dependencies
 ├── README.md # This file
@@ -370,105 +318,106 @@ text
 |-----------|---------|---------------|
 | `detection.py` | YOLO inference, drawing | ~400 |
 | `privacy.py` | Face/plate detection & blur | ~350 |
-| `alerts.py` | Warning distance calculations | ~500 |
 | `mapping.py` | Folium maps, DB queries | ~400 |
 | `deduplication.py` | DBSCAN clustering | ~300 |
-| **Total** | **Core functionality** | **~2000** |
+| **Total** | **Core functionality** | **~1500** |
 
----
-
-## 🎓 Model Training
+## Model Training
 
 ### Training Details
-- **Framework**: Ultralytics YOLOv8
-- **Architecture**: YOLOv8n (3.2M parameters)
-- **Dataset**: Custom road hazard dataset (5,000+ images)
-- **Training Time**: 4 hours on Kaggle GPU
-- **Augmentations**: Flip, rotation, brightness, mosaic
 
-### Kaggle Notebook
-🔗 **[View Training Notebook](https://www.kaggle.com/code/your-username/roadguard-yolov8-training)**
+- **Framework**: Ultralytics YOLOv11n
+- **Architecture**: YOLOv11n (2.6M parameters)
+- **Dataset**: Custom road hazard dataset (6,439+ images)
+- **Training Time**: ~2 hours on RTX 3050 GPU
+- **Augmentations**: Mosaic, mixup, rotation, scaling, HSV
 
-### Training Results
-Training configuration
-model = YOLO('yolov8n.pt')
+### Training Configuration
+
+Training configuration used
+model = YOLO('yolo11n.pt')
 results = model.train(
-data='roadhazards.yaml',
-epochs=50,
+data='road_hazards.yaml',
+epochs=65,
 imgsz=640,
-batch=16,
-patience=10,
+batch=20,
 optimizer='AdamW',
-lr0=0.001,
-augment=True
+lr0=0.002,
+lrf=0.001,
+augment=True,
+cos_lr=True,
+cls=3.0, # Increased class loss weight
+box=7.5,
+patience=30
 )
 
 text
 
 ### Dataset Statistics
-- **Total Images**: 5,247
-- **Training Set**: 4,197 (80%)
-- **Validation Set**: 525 (10%)
-- **Test Set**: 525 (10%)
-- **Annotations**: 8,342 bounding boxes
+
+- **Total Images**: 6,439 (training) + 1,619 (validation)
+- **Training Split**: 80% / 20%
+- **Classes**: 5 road hazard types
+- **Training Device**: RTX 3050 Laptop GPU (4GB VRAM)
 
 **Class Distribution**:
-| Class | Count | Percentage |
-|-------|-------|------------|
-| Pothole | 2,845 | 34.1% |
-| Longitudinal Crack | 2,156 | 25.9% |
-| Transverse Crack | 1,987 | 23.8% |
-| Alligator Crack | 1,354 | 16.2% |
 
----
+| Class | Training Instances | Difficulty |
+|-------|-------------------|------------|
+| Longitudinal Crack | 1,176 | Medium |
+| Transverse Crack | 1,183 | Easy |
+| Alligator Crack | 12 | Very Hard |
+| Pothole | 439 | Medium |
+| Other Corruption | Variable | Unknown |
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 ### Model Accuracy
 
 | Metric | Value | Benchmark |
 |--------|-------|-----------|
-| **mAP@0.5** | 84.7% | ✅ Excellent |
-| **mAP@0.5:0.95** | 62.3% | ✅ Good |
-| **Precision** | 86.5% | ✅ Excellent |
-| **Recall** | 82.1% | ✅ Good |
+| **mAP@0.5** | 50.3% | Good |
+| **mAP@0.5:0.95** | 23.0% | COCO Standard |
+| **Precision** | 57.9% | Good |
+| **Recall** | 43.1% | Fair |
 
 ### Per-Class Performance
 
-| Class | Precision | Recall | mAP50 | F1-Score |
-|-------|-----------|--------|-------|----------|
-| Pothole | 89% | 85% | 87% | 87% |
-| Longitudinal Crack | 82% | 78% | 80% | 80% |
-| Transverse Crack | 85% | 81% | 83% | 83% |
-| Alligator Crack | 88% | 86% | 87% | 87% |
-| **Average** | **86%** | **82%** | **84%** | **84%** |
+| Class | mAP@0.5 | Precision | Recall | F1-Score |
+|-------|---------|-----------|--------|----------|
+| Longitudinal Crack | 58.9% | 61.0% | 54.5% | 57.6% |
+| Transverse Crack | 71.7% | 78.1% | 62.8% | 69.7% |
+| Alligator Crack | 10.1% | 12.0% | 8.3% | 9.8% |
+| Pothole | 60.1% | 69.9% | 51.5% | 59.4% |
+| **Average** | **50.3%** | **57.9%** | **43.1%** | **49.1%** |
 
 ### System Performance
 
 | Resolution | Inference Time | FPS | Memory |
 |------------|----------------|-----|--------|
-| 640×480 | 45 ms | 22 | 1.2 GB |
-| 1280×720 | 78 ms | 13 | 1.8 GB |
-| 1920×1080 | 142 ms | 7 | 2.4 GB |
+| 640×640 | ~45 ms | 22 | 1.2 GB |
+| 1280×720 | ~78 ms | 13 | 1.8 GB |
+| 1920×1080 | ~142 ms | 7 | 2.4 GB |
 
-**Hardware**: Intel Core i5, 8GB RAM, no GPU
+**Hardware**: RTX 3050 Laptop GPU, 8GB RAM
 
-### Alert System Accuracy
-- **Warning Distance Calculation**: ±5% error
-- **Haversine Distance**: <1m error for distances <1km
-- **Safe Speed Recommendations**: Validated against DOT guidelines
+### Training Hardware
 
----
+- **GPU**: NVIDIA GeForce RTX 3050 Laptop GPU (4GB VRAM)
+- **Training Time**: ~2 hours for 65 epochs
+- **Batch Size**: 20 (limited by VRAM)
+- **Memory Usage**: ~2.9GB GPU memory during training
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Core Technologies
+
 | Category | Technology | Version | Purpose |
-|----------|-----------|---------|---------|
-| **Language** | Python | 3.10+ | Primary language |
+|----------|------------|---------|---------|
+| **Language** | Python | 3.11+ | Primary language |
 | **Package Manager** | UV | 0.4+ | Fast dependency management |
 | **Web Framework** | Streamlit | 1.28+ | Interactive UI |
-| **Deep Learning** | Ultralytics YOLOv8 | 8.0+ | Object detection |
+| **Deep Learning** | Ultralytics YOLOv11 | 8.3+ | Object detection |
 | **Computer Vision** | OpenCV | 4.8+ | Image processing |
 | **Data Science** | NumPy, Pandas | Latest | Data manipulation |
 | **Database** | SQLite | 3 | Hazard storage |
@@ -476,6 +425,7 @@ text
 | **ML Utilities** | scikit-learn | 1.3+ | Clustering (DBSCAN) |
 
 ### Development Tools
+
 - **Testing**: pytest, pytest-cov
 - **Linting**: ruff, black, isort
 - **Type Checking**: mypy
@@ -484,204 +434,142 @@ text
 - **Version Control**: Git, GitHub
 
 ### Visualization Libraries
+
 - **Plotly**: Interactive charts
 - **Matplotlib**: Static plots
 - **Streamlit Components**: Custom widgets
 
----
-
-## 🏆 Hackathon Context
+## Hackathon Context
 
 ### Challenge
+
 **VW Hackathon 2025**: Smart Mobility & Road Safety Track
 
-**Problem Statement**:  
-Develop an AI-powered system to detect and alert drivers about road hazards in real-time, improving road safety and enabling predictive maintenance.
+**Problem Statement**: Develop an AI-powered system to detect and alert drivers about road hazards in real-time, improving road safety and enabling predictive maintenance.
 
 ### Our Solution: RoadGuard
 
-#### 🎯 Unique Selling Points (USPs)
+#### Unique Selling Points (USPs)
 
-1. **Physics-Based Alert System** 🚨
-   - Not just detection, but intelligent warnings
-   - Calculates safe stopping distances using kinematics
-   - Adapts to speed, severity, and road conditions
-   - Real-time safe speed recommendations
+1. **Custom YOLOv11n Training**
+   - Trained specifically on road hazard dataset
+   - 50.3% mAP@0.5 performance on 5 hazard classes
+   - Optimized for real-time inference (45ms)
+   - RTX 3050 training with 65 epochs
 
-2. **GDPR-Compliant Privacy** 🔒
+2. **GDPR-Compliant Privacy**
    - Automatic face and license plate anonymization
-   - Multiple blurring methods (Gaussian, pixelate, black box)
+   - Multiple blurring methods (Gaussian, pixelate, blackout)
    - Verification system confirms compliance
    - Production-ready for public deployment
 
-3. **Spatial Intelligence** 🗺️
+3. **Spatial Intelligence**
    - DBSCAN clustering prevents duplicate reports
    - Time-based confidence decay
    - Geographic heatmaps for infrastructure planning
    - Proximity search with Haversine distance
 
-4. **Production-Ready Architecture** 🏗️
-   - Comprehensive test coverage (85%+)
+4. **Production-Ready Architecture**
+   - Comprehensive test coverage
    - CI/CD pipeline with GitHub Actions
    - Modular design for easy extension
    - Well-documented codebase
 
-5. **Real-World Deployment** 🚀
-   - 45ms inference (real-time capable)
-   - Works on CPU (no GPU required)
-   - Lightweight model (6.2MB)
-   - Scalable to fleet management
-
 #### Business Value
+
 - **Road Authorities**: Data-driven maintenance prioritization
 - **Fleet Operators**: Real-time driver safety alerts
 - **Insurance Companies**: Risk assessment and prevention
 - **Navigation Apps**: Enhanced routing with hazard awareness
 
-#### Impact Potential
-- **Reduced Accidents**: Early warnings prevent collisions
-- **Cost Savings**: Predictive maintenance vs reactive repairs
-- **Data Insights**: Crowdsourced road condition mapping
-- **Environmental**: Optimized routes reduce fuel consumption
-
----
-
-## 🔮 Future Roadmap
+## Future Roadmap
 
 ### Short-term (1-3 months)
-- [ ] **Mobile App Development**: React Native iOS/Android app
-- [ ] **Cloud Deployment**: AWS/Azure deployment with auto-scaling
-- [ ] **Real-time Dashboard**: Fleet management interface
-- [ ] **API Development**: RESTful API for third-party integration
-- [ ] **Enhanced Models**: YOLOv8s/m for higher accuracy
+
+- **Mobile App Development**: React Native iOS/Android app
+- **Cloud Deployment**: AWS/Azure deployment with auto-scaling
+- **Real-time Dashboard**: Fleet management interface
+- **API Development**: RESTful API for third-party integration
+- **Enhanced Models**: YOLOv11s/m for higher accuracy
 
 ### Mid-term (3-6 months)
-- [ ] **Edge Device Deployment**: Raspberry Pi, Jetson Nano
-- [ ] **Multi-language Support**: Hindi, Spanish, French
-- [ ] **Weather Integration**: Adjust alerts based on weather
-- [ ] **Crowdsourcing**: Community-based hazard reporting
-- [ ] **Advanced Analytics**: Predictive maintenance ML models
+
+- **Edge Device Deployment**: Raspberry Pi, Jetson Nano
+- **Multi-language Support**: Hindi, Spanish, French
+- **Weather Integration**: Adjust alerts based on weather
+- **Crowdsourcing**: Community-based hazard reporting
+- **Advanced Analytics**: Predictive maintenance ML models
 
 ### Long-term (6-12 months)
-- [ ] **V2X Integration**: Vehicle-to-Everything communication
-- [ ] **3D Depth Estimation**: Stereo cameras for depth
-- [ ] **Semantic Segmentation**: Pixel-level road condition mapping
-- [ ] **Blockchain**: Immutable hazard reporting ledger
-- [ ] **Government Partnerships**: Integration with DOT systems
 
-### Research Directions
-- Self-supervised learning for continuous model improvement
-- Federated learning for privacy-preserving training
-- Transformer-based detection (DETR, ViT)
-- Multi-modal fusion (camera + LiDAR + radar)
+- **V2X Integration**: Vehicle-to-Everything communication
+- **3D Depth Estimation**: Stereo cameras for depth
+- **Semantic Segmentation**: Pixel-level road condition mapping
+- **Government Partnerships**: Integration with DOT systems
 
----
-
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions from the community! Here's how you can help:
 
 ### Ways to Contribute
-1. **🐛 Report Bugs**: Open an issue with detailed reproduction steps
-2. **💡 Suggest Features**: Share your ideas in discussions
-3. **📝 Improve Documentation**: Fix typos, add examples
-4. **🧪 Write Tests**: Increase test coverage
-5. **🎨 Enhance UI**: Improve Streamlit interface
-6. **🔧 Fix Issues**: Pick up "good first issue" labels
+
+1. **Report Bugs**: Open an issue with detailed reproduction steps
+2. **Suggest Features**: Share your ideas in discussions
+3. **Improve Documentation**: Fix typos, add examples
+4. **Write Tests**: Increase test coverage
+5. **Enhance UI**: Improve Streamlit interface
+6. **Fix Issues**: Pick up "good first issue" labels
 
 ### Development Workflow
+
 1. Fork the repository
 2. Clone your fork
-git clone https://github.com/YOUR-USERNAME/roadguard-hackathon.git
-
 3. Create a feature branch
-git checkout -b feature/amazing-feature
-
 4. Make your changes
-5. Run tests
-uv run pytest tests/ -v
-
-6. Check code quality
-uv run ruff check .
-uv run black .
-
+5. Run tests: `uv run pytest tests/ -v`
+6. Check code quality: `uv run ruff check .`
 7. Commit with conventional commits
-git commit -m "feat: add amazing feature"
-
 8. Push to your fork
-git push origin feature/amazing-feature
-
 9. Open a Pull Request
-text
 
 ### Code Style
+
 - **Python**: PEP 8, enforced by Black and Ruff
 - **Commits**: Conventional Commits (feat, fix, docs, etc.)
 - **Docstrings**: Google style
 - **Tests**: pytest with 80%+ coverage target
 
-### Pull Request Guidelines
-- Reference related issues
-- Include tests for new features
-- Update documentation
-- Ensure CI passes
-- Squash commits before merge
+## License
 
----
+This project is licensed under the **MIT License** - see the LICENSE file for details.
 
-## 📄 License
+## Team & Acknowledgments
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+### Team Autono Minds
 
-MIT License
-
-Copyright (c) 2025 Team CloudNatics
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
-
-text
-
----
-
-## 👥 Team & Acknowledgments
-
-### Team CloudNatics
-- **[Your Name]** - Team Lead, ML Engineer
-  - 🔗 [GitHub](https://github.com/yourusername) | [LinkedIn](https://linkedin.com/in/yourprofile)
+- **Swastidip Maji** - Team Lead, ML Engineer
   - Role: Model training, system architecture
-  
-- **[Team Member 2]** - Full Stack Developer
-  - 🔗 [GitHub](https://github.com/member2) | [LinkedIn](https://linkedin.com/in/member2)
-  - Role: Streamlit UI, backend development
-  
-- **[Team Member 3]** - Computer Vision Engineer
-  - 🔗 [GitHub](https://github.com/member3) | [LinkedIn](https://linkedin.com/in/member3)
-  - Role: Privacy module, postprocessing
+  - Contact: swastidip2004@gmail.com
 
 ### Acknowledgments
+
 - **VW Hackathon 2025** - For organizing the event and providing the challenge
-- **Ultralytics** - For the excellent YOLOv8 framework
+- **Ultralytics** - For the excellent YOLOv11 framework
 - **Kaggle** - For providing GPU compute for training
 - **Streamlit** - For the intuitive web framework
 - **Open Source Community** - For the amazing tools and libraries
 
-### Special Thanks
-- Mentors and judges at VW Hackathon
-- Dataset contributors and annotators
-- Beta testers and early adopters
-
 ### Citations
+
 @software{roadguard2025,
 title = {RoadGuard: AI-Powered Road Hazard Detection},
-author = {Team CloudNatics},
+author = {Team Autono Minds},
 year = {2025},
-url = {https://github.com/yourusername/roadguard-hackathon}
+url = {https://github.com/Swastidp/Roadguard-MVP}
 }
 
-@software{yolov8_ultralytics,
-title = {Ultralytics YOLOv8},
+@software{yolov11_ultralytics,
+title = {Ultralytics YOLOv11},
 author = {Glenn Jocher and others},
 year = {2023},
 url = {https://github.com/ultralytics/ultralytics}
@@ -689,26 +577,32 @@ url = {https://github.com/ultralytics/ultralytics}
 
 text
 
----
+## Contact & Support
 
-## 📞 Contact & Support
-
-- **Email**: roadguard@example.com
-- **Discord**: [Join our server](https://discord.gg/roadguard)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/roadguard-hackathon/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/roadguard-hackathon/discussions)
+- **Email**: swastidip2004@gmail.com
+- **GitHub**: [Roadguard-MVP Issues](https://github.com/Swastidp/Roadguard-MVP/issues)
+- **Repository**: [Roadguard-MVP](https://github.com/Swastidp/Roadguard-MVP)
 
 ### Stay Updated
-- ⭐ Star this repo to stay notified
-- 👀 Watch releases for new versions
-- 🍴 Fork to experiment with your own ideas
+
+- Star this repo to stay notified
+- Watch releases for new versions
+- Fork to experiment with your own ideas
+
+**Made by Team Autono Minds for VW Hackathon 2025**
 
 ---
 
-<div align="center">
+## About
 
-**Made with ❤️ by Team AutonoMinds for VW Hackathon 2025**
+Road hazard detection system using YOLOv11n for real-time identification of potholes, cracks, and road damage with privacy protection and spatial intelligence.
 
-[⬆ Back to Top](#-roadguard-ai-powered-road-hazard-detection-system)
+### Resources
 
-</div>
+- [Documentation](./docs/)
+- [Training Notebook](./docs/notebooks/)
+- [Performance Metrics](./docs/metrics/)
+
+### Languages
+
+- Python 100.0%
